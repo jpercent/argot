@@ -7,9 +7,8 @@ class ArgotQueryParser extends JavaTokenParsers {
   abstract class Tree
   case class ColumnName(s: String) extends Tree
   case class TableName(s: String) extends Tree
-  case class InsertOptions(options: List[InsertOption]) extends Tree
   case class ColumnList(columns: List[ColumnName]) extends Tree
-  case class InsertStmt(name: TableName, v: ColumnList) extends Tree
+  case class InsertStmt(name: TableName, opt: InsertOption, v: ColumnList) extends Tree
   
   case class Value(value: Any) extends Tree
   case class ArgotBoolean(b: Boolean) extends Value(b)
@@ -23,24 +22,34 @@ class ArgotQueryParser extends JavaTokenParsers {
   case class Delayed extends InsertOption
   case class LowPriority extends InsertOption
   case class HighPriority extends InsertOption
-  case class Ignore extends InsertOption
   case class None extends InsertOption
   
   val INSERT: Parser[String] = """[iI][nN][sS][eE][rR][tT]""".r
   val INTO: Parser[String] = """[iI][nN][tT][oO]""".r
   val VALUES: Parser[String] = """[vV][aA][lL][uU][eE][sS]""".r
+  val HIGH: Parser[String] = """[hH][iI][gG][hH][pP][rR][iI][oO][rR][iI][tT][yY]""".r
+  val LOW: Parser[String] = """[lL][oO][wW][pP][rR][iI][oO][rR][iI][tT][yY]""".r
+  val DELAY: Parser[String] = """[dD][eE][lL][aA][yY]""".r
+  val NONE: Parser[String] = """[nN][oO][nN][eE]""".r
+  
   val NAME: Parser[String] = ident
   val columnName: Parser[ColumnName] = ident ^^ (id => ColumnName(id))
   val tableName: Parser[TableName] = ident ^^ (id => TableName(id))
   
   def insertStmt: Parser[InsertStmt] = 
-      INSERT~INTO~tableName~VALUES~"("~columnList~");" ^^ { case insert~into~tname~values~"("~clist~");" => 
-        InsertStmt(tname, ColumnList(clist))
+      INSERT~INTO~tableName~opt(insertOption)~VALUES~"("~columnList~");" ^^ { 
+          case insert~into~tname~insertops~values~"("~clist~");" if insertops == None  => InsertStmt(tname, None(), ColumnList(clist))
+          case insert~into~tname~insertops~values~"("~clist~");" => InsertStmt(tname, insertops.get, ColumnList(clist))
       }
+  
+  def insertOption: Parser[InsertOption] = 
+    HIGH ^^ (x => HighPriority()) | 
+    LOW ^^ (x => HighPriority()) | 
+    DELAY ^^ (x => Delayed()) |
+    NONE ^^ (x => None())
   
   def columnList: Parser[List[ColumnName]] = repsep(columnName, ",") ^^ (List() ++ _) |
       columnName ^^ (id => List[ColumnName](id)) 
-  
           
   def objectValue: Parser[Map[String, Value]] = 
     "{"~> repsep(objectMember, ",") <~"}" ^^ (Map() ++ _)

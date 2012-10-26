@@ -4,33 +4,46 @@ class QueryBuilder {
 
   def columnName(c: ColumnName): String = c.s
   def tableName(t: TableName): String = t.s
-  
-  def columnList(cl: ColumnList): String = "("+columns(cl.columns, 1)+")"
+  def columnList(cl: ColumnList): String = {
+    if(cl.columns.length == 0) ""
+    else "("+columns(cl.columns, 0)+")"
+  }
   def columns(c: List[ColumnName], i: Int): String = {
-    if(i == c.length) c(i).s
+    if(i == c.length-1) c(i).s
     else c(i).s + ","+ columns(c, i+1) 
   } 
 
+  def valueList(vl: ValueList): String = {
+    println("values list = "+vl.values)
+    "("+values(vl.values,0)+")"
+  }
+  def values(v: List[Value], i: Int): String = {
+    if(i == v.length-1) matchValue(v(i))
+    else matchValue(v(i)) + ","+ values(v, i+1) 
+  }
+  
   def nullValue(n: NullValue): String = "null"
   def argotBoolean(b: ArgotBoolean): String = b.b.toString()
   def integralNumber(i: IntegralNumber): String = i.i.toString()
   def realNumber(r: RealNumber): String = r.d.toString()
   def stringLiteral(s: StringLiteral): String = s.s
   
-  def argotObject(ao: ArgotObject): String = "{"+members(ao.obj.elements, ao.obj.size, 1)+"}"
+  def argotObject(ao: ArgotObject): String = "{"+members(ao.obj.elements, ao.obj.size, 0)+"}"
   def members(objiter: Iterator[(String, Value)], size: Int, i: Int): String = {
     val entry = objiter.next()
-    if(size == i) entry._1 +":"+matchValue(entry._2) +","
+    if(i == size-1) entry._1 +":"+matchValue(entry._2) +","
     else entry._1 +":"+matchValue(entry._2)+members(objiter, size, i+1)
   }
 
-  def argotArray(aa: ArgotArray): String = "["+elements(aa.array, 1)+"]"
+  def argotArray(aa: ArgotArray): String = "["+elements(aa.array, 0)+"]"
   def elements(array: List[Value], i: Int): String = {
-    if(i == array.length) matchValue(array(i))
+    if(i == array.length-1) matchValue(array(i))
     else matchValue(array(i)) + ","+elements(array, i+1)
   }
  
-  def insert(i: InsertStmt): String = buildQuery(i.tableName) + buildQuery(i.insertOption) + buildQuery(i.columns)
+  def insert(i: InsertStmt): String = {
+    "insert into "+buildQuery(i.tableName)+buildQuery(i.insertOption)+buildQuery(i.columns)+" values "+buildQuery(i.values)
+  }
  
   def matchInsertOption(io: InsertOption): String = io match {
     case _: Delayed => "delayed"
@@ -56,5 +69,6 @@ class QueryBuilder {
     case x: ColumnName => columnName(x)
     case x: TableName => tableName(x)
     case x: ColumnList => columnList(x)
+    case x: ValueList => valueList(x)
   }  
 }

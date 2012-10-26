@@ -1,12 +1,16 @@
 package syndeticlogic.argot.sql
 
 import scala.util.parsing.combinator._
+import java.io.Reader;
 import java.io.FileReader;
+import java.io.StringReader;
+import java.lang.RuntimeException;
 
 abstract class Tree
 case class ColumnName(s: String) extends Tree
 case class TableName(s: String) extends Tree
 case class ColumnList(columns: List[ColumnName]) extends Tree
+case class ValueList(values: List[Value]) extends Tree
 
 case class Value(value: Any) extends Tree
 case class NullValue() extends Value(null)
@@ -23,10 +27,9 @@ case class LowPriority extends InsertOption
 case class HighPriority extends InsertOption
 case class None extends InsertOption
 
-case class InsertStmt(tableName: TableName, insertOption: InsertOption, columns: ColumnList) extends Tree
+case class InsertStmt(tableName: TableName, insertOption: InsertOption, columns: ColumnList, values: ValueList) extends Tree
 
 class ArgotParser extends JavaTokenParsers {
-
   
   val INSERT: Parser[String] = """[iI][nN][sS][eE][rR][tT]""".r
   val INTO: Parser[String] = """[iI][nN][tT][oO]""".r
@@ -39,11 +42,21 @@ class ArgotParser extends JavaTokenParsers {
   val NAME: Parser[String] = ident
   val columnName: Parser[ColumnName] = ident ^^ (id => ColumnName(id))
   val tableName: Parser[TableName] = ident ^^ (id => TableName(id))
+
+  def columns(o: Option[ArgotParser.this.~[ArgotParser.this.~[String,List[syndeticlogic.argot.sql.ColumnName]],String]]): List[ColumnName] = {
+    o.get._1._2
+  }
   
   def insertStmt: Parser[InsertStmt] = 
-      INSERT~INTO~tableName~opt(insertOption)~VALUES~"("~columnList~");" ^^ { 
-          case insert~into~tname~insertops~values~"("~clist~");" if insertops == None  => InsertStmt(tname, None(), ColumnList(clist))
-          case insert~into~tname~insertops~values~"("~clist~");" => InsertStmt(tname, insertops.get, ColumnList(clist))
+    INSERT~INTO~tableName~opt(insertOption)~opt("("~columnList~")")~VALUES~"("~valueList~");" ^^ {
+          case insert~into~tname~insertops~clist~values~"("~vlist~");" if insertops == scala.None && clist == scala.None =>
+            InsertStmt(tname, None(), ColumnList(List()), ValueList(vlist))
+          case insert~into~tname~insertops~clist~values~"("~vlist~");" if insertops == scala.None =>
+            InsertStmt(tname, None(), ColumnList(columns(clist)), ValueList(vlist))
+          case insert~into~tname~insertops~clist~values~"("~vlist~");" if clist == scala.None =>
+            InsertStmt(tname, None(), ColumnList(List()), ValueList(vlist))
+          case insert~into~tname~insertops~clist~values~"("~vlist~");" =>
+            InsertStmt(tname, insertops.get, ColumnList(columns(clist)), ValueList(vlist))
       }
   
   def insertOption: Parser[InsertOption] = 
@@ -54,7 +67,10 @@ class ArgotParser extends JavaTokenParsers {
   
   def columnList: Parser[List[ColumnName]] = repsep(columnName, ",") ^^ (List() ++ _) |
       columnName ^^ (id => List[ColumnName](id)) 
-          
+  
+  def valueList: Parser[List[Value]] = repsep(value, ",") ^^ (List() ++ _) |
+      value ^^ (id => List[Value](id))
+      
   def objectValue: Parser[Map[String, Value]] = 
     "{"~> repsep(objectMember, ",") <~"}" ^^ (Map() ++ _)
 
@@ -63,9 +79,9 @@ class ArgotParser extends JavaTokenParsers {
   def objectMember: Parser[(String,Value)] = stringLiteral~":"~value ^^ 
       {case name~":"~value => (name, value)}
 
+  //objectValue ^^ (x => ArgotObject(x)) |
+          //arrayValue ^^ (x => ArgotArray(x)) | 
   def value: Parser[Value] = 
-          objectValue ^^ (x => ArgotObject(x)) |
-          arrayValue ^^ (x => ArgotArray(x)) | 
           stringLiteral ^^ (literal => StringLiteral(literal)) |
           wholeNumber ^^ (x => IntegralNumber(x.toLong)) | 
           floatingPointNumber ^^ (x => RealNumber(x.toDouble)) | 
@@ -75,9 +91,18 @@ class ArgotParser extends JavaTokenParsers {
 }
 
 object ParseArgot extends ArgotParser {
-  def main(args: Array[String]) {
-    val reader = new FileReader(args(0))
-    println(parseAll(insertStmt, reader))
+  def parse(s: String): Tree = {
+    val reader = new StringReader(s)
+    parse(reader)
+  }
+  def parse(r: Reader): Tree = {
+    val tree: ParseResult[Tree] = parseAll(insertStmt, r)
+    println(tree)
+    try { 
+      tree.get
+    } catch {
+      case e: RuntimeException => null
+    }
   }
 }
 /* 

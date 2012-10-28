@@ -23,12 +23,12 @@ class QueryBuilder {
   }
   
   def nullValue(n: NullValue): String = "null"
-  def argotBoolean(b: ArgotBoolean): String = b.b.toString()
+  def argotBoolean(b: ArgotBooleanValue): String = b.b.toString()
   def integralNumber(i: IntegralNumber): String = i.i.toString()
   def realNumber(r: RealNumber): String = r.d.toString()
   def stringLiteral(s: StringLiteral): String = s.s
   
-  def argotObject(ao: ArgotObject): String = "{"+members(ao.obj.elements, ao.obj.size, 0)+"}"
+  def argotObject(ao: ArgotObjectValue): String = "{"+members(ao.obj.elements, ao.obj.size, 0)+"}"
   def members(objiter: Iterator[(String, Value)], size: Int, i: Int): String = {
     val entry = objiter.next()
     if(i == size-1) entry._1 +":"+matchValue(entry._2) +","
@@ -54,11 +54,11 @@ class QueryBuilder {
   
   def matchValue(v: Value): String = v match {
     case x: NullValue => nullValue(x)
-    case x: ArgotBoolean => argotBoolean(x)
+    case x: ArgotBooleanValue => argotBoolean(x)
     case x: IntegralNumber => integralNumber(x)
     case x: RealNumber => realNumber(x)
     case x: StringLiteral => stringLiteral(x)
-    case x: ArgotObject => argotObject(x)
+    case x: ArgotObjectValue => argotObject(x)
     case x: ArgotArray => argotArray(x)
   }
 

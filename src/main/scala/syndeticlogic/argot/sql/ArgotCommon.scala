@@ -15,13 +15,38 @@ case class ColumnList(columns: List[ColumnName]) extends Tree
 case class ValueList(values: List[Value]) extends Tree
 
 case class Value(value: Any) extends Tree
-case class NullValue() extends Value(null)
-case class ArgotBoolean(b: Boolean) extends Value(b)
+case class NullValue extends Value(null)
+case class ArgotBooleanValue(b: Boolean) extends Value(b)
 case class IntegralNumber(i: Long) extends Value(i)
 case class RealNumber(d: Double) extends Value(d)
 case class StringLiteral(s: String) extends Value(s)
-case class ArgotObject(obj: Map[String, Value]) extends Value(obj)
+case class ArgotObjectValue(obj: Map[String, Value]) extends Value(obj)
 case class ArgotArray(array: List[Value]) extends Value(array)
+
+abstract class Key
+case class PrimaryKey extends Key
+case class ForeignKey extends Key
+case class IndexKey extends Key
+
+abstract class ArgotType
+case class ArgotTypeType(id: String, key: Key) extends ArgotType
+case class ArgotBoolean(id: String, key: Key) extends ArgotType
+case class ArgotByte(id: String, key: Key) extends ArgotType
+case class ArgotChar(id: String, key: Key) extends ArgotType
+case class ArgotShort(id: String, key: Key) extends ArgotType
+case class ArgotInteger(id: String, key: Key) extends ArgotType
+case class ArgotLong(id: String, key: Key) extends ArgotType
+case class ArgotFloat(id: String, key: Key) extends ArgotType
+case class ArgotDouble(id: String, key: Key) extends ArgotType
+case class ArgotString(id: String, key: Key) extends ArgotType
+case class ArgotBinary(id: String, key: Key) extends ArgotType
+case class CodeableRef(typeName: String, id: String, decomposed: String, key: Key) extends ArgotType
+
+abstract class ArgotCompoundType
+case class Codeable(typeName: String, typeList: List[ArgotType]) extends ArgotCompoundType
+case class VectorDef(id: String, typeName: ArgotType) extends ArgotCompoundType
+case class SingletonDef(typeName: String, typeList: List[ArgotType]) extends ArgotCompoundType
+case class TableDef(typeName: String) extends ArgotCompoundType
 
 abstract class InsertOption extends Tree         
 case class Delayed extends InsertOption
@@ -34,6 +59,5 @@ trait Commons extends JavaTokenParsers {
   val NAME: Parser[String] = ident
   val columnName: Parser[ColumnName] = ident ^^ (id => ColumnName(id))
   val tableName: Parser[TableName] = ident ^^ (id => TableName(id))
-
 }
 

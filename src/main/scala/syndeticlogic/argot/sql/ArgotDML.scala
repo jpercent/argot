@@ -28,8 +28,8 @@ trait Values extends JavaTokenParsers {
           wholeNumber ^^ (x => IntegralNumber(x.toLong)) | 
           floatingPointNumber ^^ (x => RealNumber(x.toDouble)) | 
           "null" ^^ (x => NullValue()) |
-          "true" ^^ (x => ArgotBoolean(true)) |
-          "false" ^^ (x => ArgotBoolean(false))
+          "true" ^^ (x => ArgotBooleanValue(true)) |
+          "false" ^^ (x => ArgotBooleanValue(false))
 
 }
 

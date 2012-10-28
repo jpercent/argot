@@ -7,9 +7,6 @@ import org.junit.Before
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
-import syndeticlogic.argot.ParseArgot;
-import syndeticlogic.argot.tree;
-
 class ArgotSQLParserTest {
   val query0 = "insert into tableName values (\"uno\");"
   val expectedQuery0 = "insert into tableName values (\"uno\")"

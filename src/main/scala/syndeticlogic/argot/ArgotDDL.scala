@@ -1,31 +1,6 @@
 package syndeticlogic.argot
 
 import scala.util.parsing.combinator._
-import syndeticlogic.argot.=;
-import syndeticlogic.argot.ArgotBinary;
-import syndeticlogic.argot.ArgotBoolean;
-import syndeticlogic.argot.ArgotByte;
-import syndeticlogic.argot.ArgotChar;
-import syndeticlogic.argot.ArgotDouble;
-import syndeticlogic.argot.ArgotFloat;
-import syndeticlogic.argot.ArgotInteger;
-import syndeticlogic.argot.ArgotLong;
-import syndeticlogic.argot.ArgotShort;
-import syndeticlogic.argot.ArgotString;
-import syndeticlogic.argot.ArgotType;
-import syndeticlogic.argot.ArgotTypeType;
-import syndeticlogic.argot.Codeable;
-import syndeticlogic.argot.CodeableRef;
-import syndeticlogic.argot.Commons;
-import syndeticlogic.argot.ForeignKey;
-import syndeticlogic.argot.IndexKey;
-import syndeticlogic.argot.Object;
-import syndeticlogic.argot.Parser;
-import syndeticlogic.argot.PrimaryKey;
-import syndeticlogic.argot.SingletonDef;
-import syndeticlogic.argot.TableDef;
-import syndeticlogic.argot.Types;
-import syndeticlogic.argot.VectorDef;
 
 import java.io.Reader;
 import java.io.FileReader;
@@ -93,7 +68,7 @@ trait Singleton extends Object {
   }
 }
 
-trait Array extends Types {
+trait Vector extends Types {
   val VECTOR: Parser[String] = """[vV][eE][cC][tT][eE][rR]""".r
   def vector: Parser[VectorDef] = {
     VECTOR~NAME~"["~argotType~"]"  ^^ {case vector~name~"["~argottype~"]" => VectorDef(name, argottype)}

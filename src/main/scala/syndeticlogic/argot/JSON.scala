@@ -1,8 +1,6 @@
 package syndeticlogic.argot
 
 import scala.util.parsing.combinator._
-import syndeticlogic.argot.JSON;
-import syndeticlogic.argot.scala;
 
 import java.io.FileReader
 

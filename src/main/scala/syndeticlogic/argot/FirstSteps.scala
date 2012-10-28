@@ -1,26 +1,26 @@
 package syndeticlogic.argot
 
-object Tree {
-  abstract class Tree
-  case class Sum(l: Tree, r: Tree) extends Tree
-  case class Var(n: String) extends Tree
-  case class Const(v: Int) extends Tree
+object ATree {
+  abstract class ATree
+  case class Sum(l: ATree, r: ATree) extends ATree
+  case class Var(n: String) extends ATree
+  case class Const(v: Int) extends ATree
   type Environment = String => Int
 
-  def eval(t: Tree, env: Environment): Int = t match {
+  def eval(t: ATree, env: Environment): Int = t match {
     case Sum(l, r) => eval(l, env) + eval(r, env)
     case Var(n) => env(n)
     case Const(v) => v
   }
 
-  def derive(t: Tree, v: String): Tree = t match {
+  def derive(t: ATree, v: String): ATree = t match {
     case Sum(l, r) => Sum(derive(l, v), derive(r, v))
     case Var(n) if (n == v) => Const(1)
     case _ => Const(0)
   }
 
-  def main(args: Array[String]): Unit = {
-    val exp: Tree = Sum(Sum(Var("x"), Var("x")), Sum(Const(7), Var("y")))
+  def main(args: scala.Array[String]): Unit = {
+    val exp: ATree = Sum(Sum(Var("x"), Var("x")), Sum(Const(7), Var("y")))
     val env: Environment = { case "x" => 7 case "y" => 8 }
     println("Expression: " + exp)
     println("Eval with x=7 and y=8: " + eval(exp, env))

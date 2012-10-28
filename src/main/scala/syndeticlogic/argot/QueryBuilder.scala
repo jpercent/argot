@@ -62,7 +62,7 @@ class QueryBuilder {
     case x: ArgotArray => argotArray(x)
   }
 
-  def buildQuery(t: Tree): String = t match {
+  def buildQuery(t: ArgotParseTree): String = t match {
     case x: InsertStmt => insert(x)
     case x: Value => matchValue(x)
     case x: InsertOption => matchInsertOption(x)

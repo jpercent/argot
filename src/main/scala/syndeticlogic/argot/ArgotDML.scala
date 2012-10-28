@@ -1,26 +1,6 @@
 package syndeticlogic.argot
 
 import scala.util.parsing.combinator._
-import syndeticlogic.argot.=;
-import syndeticlogic.argot.ArgotBooleanValue;
-import syndeticlogic.argot.ColumnList;
-import syndeticlogic.argot.ColumnName;
-import syndeticlogic.argot.Commons;
-import syndeticlogic.argot.Delayed;
-import syndeticlogic.argot.HighPriority;
-import syndeticlogic.argot.InsertStmt;
-import syndeticlogic.argot.IntegralNumber;
-import syndeticlogic.argot.List;
-import syndeticlogic.argot.None;
-import syndeticlogic.argot.NullValue;
-import syndeticlogic.argot.Parser;
-import syndeticlogic.argot.RealNumber;
-import syndeticlogic.argot.StringLiteral;
-import syndeticlogic.argot.Value;
-import syndeticlogic.argot.ValueList;
-import syndeticlogic.argot.Values;
-import syndeticlogic.argot.scala;
-
 import java.io.Reader;
 import java.io.FileReader;
 import java.io.StringReader;
@@ -63,7 +43,7 @@ trait Insert extends JavaTokenParsers with Values with Commons {
   val DELAY: Parser[String] = """[dD][eE][lL][aA][yY]""".r
   val NONE: Parser[String] = """[nN][oO][nN][eE]""".r
   
-  def columns(o: Option[Insert.this.~[Insert.this.~[String,List[syndeticlogic.argot.sql.ColumnName]],String]]): List[ColumnName] = {
+  def columns(o: Option[Insert.this.~[Insert.this.~[String,List[syndeticlogic.argot.ColumnName]],String]]): List[ColumnName] = {
     o.get._1._2
   }
   

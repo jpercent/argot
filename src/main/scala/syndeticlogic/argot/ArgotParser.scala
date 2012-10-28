@@ -1,10 +1,6 @@
 package syndeticlogic.argot
 
 import scala.util.parsing.combinator._
-import syndeticlogic.argot.ArgotParser;
-import syndeticlogic.argot.Insert;
-import syndeticlogic.argot.ParseResult;
-import syndeticlogic.argot.Tree;
 
 import java.io.Reader;
 import java.io.FileReader;
@@ -18,12 +14,12 @@ class ArgotParser extends JavaTokenParsers with Insert {}
 object ParseArgot extends ArgotParser {
   val logger: Log = LogFactory.getLog(this.getClass);
   
-  def parse(s: String): Tree = {
+  def parse(s: String): ArgotParseTree = {
     val reader = new StringReader(s)
     parse(reader)
   }
-  def parse(r: Reader): Tree = {
-    val tree: ParseResult[Tree] = parseAll(insertStmt, r)
+  def parse(r: Reader): ArgotParseTree = {
+    val tree: ParseResult[ArgotParseTree] = parseAll(insertStmt, r)
     logger.debug(tree)
     try { tree.get }
     catch { case e: RuntimeException => {

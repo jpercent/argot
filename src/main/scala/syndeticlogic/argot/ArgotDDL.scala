@@ -48,18 +48,90 @@ trait Types extends Commons {
   def key: Parser[Key] = PRIMARY ^^ (x => PrimaryKey()) | FOREIGN ^^ (x => ForeignKey()) | INDEX ^^ (x => IndexKey())
 }
 
-trait Object extends Types {
+/*
+ 
+ codeable apple extends fruit  {
+   codeable seeds;
+   
+}
+ 
+ codeable fruit {
+   string name,
+   integer shelflife
+   
+   equals {
+     if ( and || !) {
+         if () {
+         }
+     } else if(
+   
+   equals <- "{"~functionStmts~"}"
+   funtionStmts <- functionStmt~opt(rep(functionStmt))
+   functionStmt <- returnStmt | ifStmt
+   returnStmt <- RETURN BOOLEAN~";"
+   ifStmt <- IF~conditionalStmt~blockStmt~opt(rep(elseIfStmt))~opt(else)
+   blockStmt <- "{"~opt(block)~"}"
+   block <- rep(ifStmt) | returnStmt
+   elseIfStmt <- ELSEIF~conditionalStmt~blockStmt
+   elseStmt <- blockStmt
+   conditionalStmt <-  "("~condition~")"
+   condition <- reference~comparator~reference~opt(rep(connector~condition)) 
+   reference <- memberReference | memberAccessReference | constant
+   constant <- Number | stringLiteral
+   memberReference <- opt("!")~NAME 
+   memberAccessReference <- opt("!")~NAME~"."~opt("!")~NAME
+   comparator <- "==" | "!=" | "<" | ">" | "<=" | ">="
+   connector <- "and" | "or" 
+ }
+  }
+ */
+
+trait CodeableObject extends Types {
+  val EXTENDS: Parser[String] = """[eE][xX][tT][eE][nN][dD][sS]""".r
+  val AND: Parser[String] = """[aA][nN][dD]""".r
+  val OR: Parser[String] = """[oO][rR]""".r
+  val EQUALS: Parser[String] = """[eE][qQ][uU][aA][lL][sS]""".r
+  val RETURN: Parser[String] = """[rR][eE][tT][uU][rR][nN]""".r
+  val TRUE: Parser[String] = """[tT][rR][uU][eE]""".r
+  val FALSE: Parser[String] = """[fF][aA][lL][sS][eE]""".r
+  val IF: Parser[String] = """[iI][fF]""".r
+  
   def codeable: Parser[Codeable] = {
-    CODEABLE~NAME~"{"~typeList~opt(equals)~opt(compare)~opt(hashcode)~"}" ^^ {
-      case codeable~name~"{"~typelist~optequals~optcompare~opthashcode~"}" => Codeable(name, typelist)
+    CODEABLE~NAME~opt(optionalExtends)~"{"~typeList~opt(equals)~opt(compare)~"}" ^^ {
+      case codeable~name~supertype~"{"~typelist~optequals~optcompare~"}" => Codeable(name, supertype.get, typelist)
     }
   }
-  def equals: Parser[Any] = null
+  
+  def optionalExtends: Parser[String] = EXTENDS~NAME ^^ {case optextends~name => name}
+  def equals: Parser[EqualsMethod] = {
+    EQUALS~"{"~>functionStmt<~"}" ^^ (functionstmt => EqualsMethod(functionstmt)) 
+  }
+ 
+  def functionStmt: Parser[List[Statement]] = {
+    statement~opt(rep(statement)) ^^ {case stmt~optrepmultistmt => 
+      if(optrepmultistmt.get != None) List(stmt) ++ optrepmultistmt.get 
+      else List(stmt)
+    }
+  }
+  
+  def statement: Parser[Statement] = {
+    ifStatement | returnStatement
+  }
+  
+  def ifStatement: Parser[IfStatement] = { IF~"("~>conditionalStmt~")"~"{"~blockStmt<~"}" ^^ 
+    {case conditional~")"~"{"~block => IfStatement(conditional, block)}
+  }
+  
+  def returnStatement: Parser[ReturnStatement] = {
+    RETURN~>TRUE ^^ { _ => ReturnStatement(true) } | 
+    RETURN~>FALSE ^^ {_ => ReturnStatement(false) }
+  }
+  def conditionalStmt: Parser[Condition] = null
+  def blockStmt: Parser[Block] = null
   def compare: Parser[Any] = null 
-  def hashcode: Parser[Any] = null
 }
 
-trait Singleton extends Object {
+trait Singleton extends CodeableObject {
   val SINGLETON: Parser[String] = """[sS][iI][nN][gG][lL][eE][tT][oO][nN]""".r
   def singleton: Parser[SingletonDef] = {
       SINGLETON~NAME~"{"~typeList~"}" ^^ {

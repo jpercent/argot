@@ -44,10 +44,40 @@ case class ArgotBinary(id: String, key: Key) extends ArgotType
 case class CodeableRef(typeName: String, id: String, decomposed: String, key: Key) extends ArgotType
 
 abstract class ArgotCompoundType extends ArgotParseTree
-case class Codeable(typeName: String, typeList: List[ArgotType]) extends ArgotCompoundType
+case class Codeable(typeName: String, superType: String, typeList: List[ArgotType]) extends ArgotCompoundType
 case class VectorDef(id: String, typeName: ArgotType) extends ArgotCompoundType
 case class SingletonDef(typeName: String, typeList: List[ArgotType]) extends ArgotCompoundType
 case class TableDef(typeName: String) extends ArgotCompoundType
+
+abstract class Method extends ArgotParseTree
+case class EqualsMethod(functionBody: List[Statement]) extends Method
+case class CompartorMethod extends Method
+
+abstract class Statement extends Method
+case class ReturnStatement(b: Boolean) extends Statement
+case class IfStatement(c: Condition, b: Block) extends Statement
+
+abstract class SubStatement extends Statement
+case class ElseIfStatement extends SubStatement
+case class ElseStatement extends SubStatement
+case class Condition extends SubStatement
+case class Block extends SubStatement
+
+abstract class Reference extends Method
+case class Complement extends Reference
+case class MemberReference(id: String, c: Complement) extends Reference
+case class QualifiedMemberReference(id: String, c: Complement) extends Reference
+
+abstract class Comparator extends Method
+case class Less extends Comparator
+case class LessOrEqual extends Comparator
+case class EqualEqual extends Comparator
+case class GreaterOrEqual extends Comparator
+case class Greater extends Comparator
+
+abstract class Connector extends Method
+case class And extends Connector
+case class Or extends Connector
 
 abstract class InsertOption extends ArgotParseTree         
 case class Delayed extends InsertOption

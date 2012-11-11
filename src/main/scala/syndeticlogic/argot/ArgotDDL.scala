@@ -116,8 +116,13 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   }
   
   def optionalExtends: Parser[String] = EXTENDS~NAME ^^ {case optextends~name => name}
+  
   def equals: Parser[EqualsMethod] = {
-    EQUALS~"{"~>functionStmt<~"}" ^^ (functionstmt => EqualsMethod(functionstmt)) 
+    EQUALS~OTHER~"{"~>functionStmt<~"}" ^^ (functionstmt => EqualsMethod(functionstmt)) 
+  }
+  
+  def compare: Parser[CompareMethod] = {
+    COMPARE~OTHER~"{"~>functionStmt<~"}" ^^ (functionstmt => CompareMethod(functionstmt)) 
   }
 
   def functionStmt: Parser[List[Statement]] = {
@@ -128,7 +133,7 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   }
   
   def statement: Parser[Statement] = {
-    ifStatement | booleanReturnStatement
+    ifStatement | booleanReturnStatement | ternaryReturnStatement
   }
   
   def ifStatement: Parser[IfThenElseStatement] = 
@@ -162,6 +167,12 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   def booleanReturnStatement: Parser[BooleanReturnStatement] = {
     RETURN~>TRUE ^^ { _ => BooleanReturnStatement(true) } | 
     RETURN~>FALSE ^^ {_ => BooleanReturnStatement(false) }
+  }
+  
+  def ternaryReturnStatement: Parser[TernaryReturnStatement] = {
+    RETURN~>"-1" ^^ (x => TernaryReturnStatement(-1)) | 
+    RETURN~>"0" ^^ (x => TernaryReturnStatement(0)) |
+    RETURN~>"1" ^^ (x => TernaryReturnStatement(1))
   }
 
   def condition: Parser[Condition] = {
@@ -219,8 +230,6 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   def block: Parser[List[Statement]] = {
     "{"~>repsep(statement, ",")<~"}" ^^ (List() ++ _)
   }
-  
-  def compare: Parser[Any] = null 
 }
 
 trait Object extends CodeableObject {

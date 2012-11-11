@@ -52,10 +52,11 @@ case class TableDef(typeName: String) extends ArgotCompoundType
 
 abstract class Method extends ArgotParseTree
 case class EqualsMethod(functionBody: List[Statement]) extends Method
-case class CompartorMethod extends Method
+case class CompareMethod(functionBody: List[Statement]) extends Method
 
 abstract class Statement extends Method
 case class BooleanReturnStatement(b: Boolean) extends Statement
+case class TernaryReturnStatement(value: Int) extends Statement
 case class IfThenElseStatement(clauses: List[SubStatement]) extends Statement
 
 abstract class SubStatement extends Statement

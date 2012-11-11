@@ -41,11 +41,12 @@ case class ArgotFloat(id: String, key: Key) extends ArgotType
 case class ArgotDouble(id: String, key: Key) extends ArgotType
 case class ArgotString(id: String, key: Key) extends ArgotType
 case class ArgotBinary(id: String, key: Key) extends ArgotType
+case class VectorDef(typeName: String, id: String) extends ArgotType
+case class MapDef(typeName: String, valueName: String, id: String) extends ArgotType
 case class CodeableRef(typeName: String, id: String, decomposed: String, key: Key) extends ArgotType
 
-abstract class ArgotCompoundType extends ArgotParseTree
+abstract class ArgotCompoundType extends ArgotType
 case class Codeable(typeName: String, superType: String, typeList: List[ArgotType]) extends ArgotCompoundType
-case class VectorDef(id: String, typeName: ArgotType) extends ArgotCompoundType
 case class SingletonDef(typeName: String, typeList: List[ArgotType]) extends ArgotCompoundType
 case class TableDef(typeName: String) extends ArgotCompoundType
 
@@ -54,7 +55,7 @@ case class EqualsMethod(functionBody: List[Statement]) extends Method
 case class CompartorMethod extends Method
 
 abstract class Statement extends Method
-case class ReturnStatement(b: Boolean) extends Statement
+case class BooleanReturnStatement(b: Boolean) extends Statement
 case class IfThenElseStatement(clauses: List[SubStatement]) extends Statement
 
 abstract class SubStatement extends Statement
@@ -81,8 +82,14 @@ case class Or(lhs: BooleanFunction, rhs: BooleanFunction) extends Connector
 
 abstract class Reference
 case class MemberReference(member: String) extends Reference
-case class ArrayReference(name: String, index: String) extends Reference
+case class VectorReference(id: String, index: String) extends Reference
+case class MapReference(id: String, key: Reference) extends Reference
 case class QualifiedMemberReference(obj: String, member: Reference) extends Reference
+
+abstract class FunctionReference extends Reference
+case class EqualsReference(param: Reference) extends FunctionReference
+case class CompareReference(param: Reference) extends FunctionReference
+case class Foreach(block: Block) extends FunctionReference
 
 abstract class InsertOption extends ArgotParseTree         
 case class Delayed extends InsertOption

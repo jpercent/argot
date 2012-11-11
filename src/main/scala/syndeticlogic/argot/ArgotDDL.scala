@@ -8,8 +8,19 @@ import java.io.StringReader;
 import java.lang.RuntimeException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+// vector and map are special because they can be used in declarations of types and as definitions of storage objects.
+trait SpecialTypes extends Commons {
+    val VECTOR: Parser[String] = """[vV][eE][cC][tT][oO][rR]""".r
+    val MAP: Parser[String] = """[mM][aA][pP]""".r
+    def vector: Parser[VectorDef] = {
+      VECTOR~"["~>NAME~"]"~NAME ^^ {case typeName~rbracket~id => VectorDef(typeName, id) }
+    }
+    def map: Parser[MapDef] = {
+      MAP~"["~>NAME~","~NAME~"]"~NAME ^^ {case keyName~comma~valueName~rbracket~id => MapDef(keyName, valueName, id)}
+    }
+} 
 
-trait Types extends Commons {
+trait Types extends Commons with SpecialTypes {
   val TYPE: Parser[String] = """[tT][yY][pP][eE]""".r
   val BOOLEAN: Parser[String]  = """[bB][oO][oO][lL][eE][aA][nN]""".r
   val BYTE: Parser[String] = """[bB][yY][tT][eE]""".r
@@ -20,7 +31,7 @@ trait Types extends Commons {
   val FLOAT: Parser[String] = """[fF][lL][oO][aA][tT]""".r 
   val DOUBLE: Parser[String] = """[dD][oO][uU][bB][lL][eE]""".r
   val STRING: Parser[String] = """[sS][tT][rR][iI][nN][gG]""".r
-  val BINARY: Parser[String] = """[bB][iI][nN][aA][rR][yY]""".r    
+  val BINARY: Parser[String] = """[bB][iI][nN][aA][rR][yY]""".r
   val CODEABLE: Parser[String] = """[cC][oO][dD][eE][aA][bB][lL][eE]""".r
   val DECOMPOSED: Parser[String] = """[dD][eE][cC][oO][mM][pP][oO][sS][eE][dD]""".r
   val PRIMARY: Parser[String] = """[pP][rR][iI][mM][aA][rR][yY]""".r
@@ -31,22 +42,27 @@ trait Types extends Commons {
       argotType ^^ (id => List[ArgotType](id))
 
   def argotType: Parser[ArgotType] = {
-      TYPE~NAME~opt(key) ^^ {case atype~name~optkey => ArgotTypeType(name, optkey.get)} |
-      BOOLEAN~NAME~opt(key) ^^ {case atype~name~optkey => ArgotBoolean(name, optkey.get)} |
-      BYTE~NAME~opt(key) ^^ {case atype~name~optkey => ArgotByte(name, optkey.get)} |
-      CHAR~NAME~opt(key) ^^ {case atype~name~optkey => ArgotChar(name, optkey.get)} |
-      SHORT~NAME~opt(key) ^^ {case atype~name~optkey => ArgotShort(name, optkey.get)} |      
-      INTEGER~NAME~opt(key) ^^ {case atype~name~optkey => ArgotInteger(name, optkey.get)} |
-      LONG~NAME~opt(key) ^^ {case atype~name~optkey => ArgotLong(name, optkey.get)} |
-      FLOAT~NAME~opt(key) ^^ {case atype~name~optkey => ArgotFloat(name, optkey.get)} |      
-      DOUBLE~NAME~opt(key) ^^ {case atype~name~optkey => ArgotDouble(name, optkey.get)} |
-      STRING~NAME~opt(key) ^^ {case atype~name~optkey => ArgotString(name, optkey.get)} |
-      BINARY~NAME~opt(key) ^^ {case atype~name~optkey => ArgotBinary(name,optkey.get)} |
-      CODEABLE~NAME~NAME~opt(DECOMPOSED)~opt(key) ^^ {case atype~name~name1~decomposed~optkey => CodeableRef(name, name1, decomposed.get, optkey.get)} 
-  }  
-  
+    TYPE~NAME~opt(key) ^^ {case atype~name~optkey => ArgotTypeType(name, optkey.get)} |
+    BOOLEAN~NAME~opt(key) ^^ {case atype~name~optkey => ArgotBoolean(name, optkey.get)} |
+    BYTE~NAME~opt(key) ^^ {case atype~name~optkey => ArgotByte(name, optkey.get)} |
+    CHAR~NAME~opt(key) ^^ {case atype~name~optkey => ArgotChar(name, optkey.get)} |
+    SHORT~NAME~opt(key) ^^ {case atype~name~optkey => ArgotShort(name, optkey.get)} |      
+    INTEGER~NAME~opt(key) ^^ {case atype~name~optkey => ArgotInteger(name, optkey.get)} |
+    LONG~NAME~opt(key) ^^ {case atype~name~optkey => ArgotLong(name, optkey.get)} |
+    FLOAT~NAME~opt(key) ^^ {case atype~name~optkey => ArgotFloat(name, optkey.get)} |      
+    DOUBLE~NAME~opt(key) ^^ {case atype~name~optkey => ArgotDouble(name, optkey.get)} |
+    STRING~NAME~opt(key) ^^ {case atype~name~optkey => ArgotString(name, optkey.get)} |
+    BINARY~NAME~opt(key) ^^ {case atype~name~optkey => ArgotBinary(name,optkey.get)} |
+    CODEABLE~NAME~NAME~opt(DECOMPOSED)~opt(key) ^^ {
+      case atype~name~name1~decomposed~optkey => CodeableRef(name, name1, decomposed.get, optkey.get)
+    } |
+    vector |
+    map
+  }
+      
   def key: Parser[Key] = PRIMARY ^^ (x => PrimaryKey()) | FOREIGN ^^ (x => ForeignKey()) | INDEX ^^ (x => IndexKey())
 }
+
 
 /* 
  codeable apple extends fruit  {
@@ -56,21 +72,36 @@ trait Types extends Commons {
 
 codeable fruit {
   string name,
-  integer shelflife
-   
-  equals {
+  integer shelflife,
+  vector[integer] shelflives,
+  map[key, value] shelflivesToTimeTolive
+  
+  equals(other) {
     if ( and || !) {
       if (... and/or ...) {
       }
      } else if(...)
  
    }
+   
+   compare(other) {
+       if( and || ! ()) ...
+          return -1
+       else if..
+        return 0
+       else..
+        return 1
+   }
+   
    */
-trait CodeableObject extends Types with Values {
+trait CodeableObject extends Types with Values with SpecialTypes {
   val EXTENDS: Parser[String] = """[eE][xX][tT][eE][nN][dD][sS]""".r
   val AND: Parser[String] = """[aA][nN][dD]""".r
   val OR: Parser[String] = """[oO][rR]""".r
   val EQUALS: Parser[String] = """[eE][qQ][uU][aA][lL][sS]""".r
+  val COMPARE: Parser[String] = """[cC][oO][mM][pP][aA][rR][eE]""".r
+  val FOREACH: Parser[String] = """[fF][oO][rR][eE][aA][cC][hH]""".r
+  val OTHER: Parser[String] = """([oO][tT][hH][eE][rR])""".r
   val RETURN: Parser[String] = """[rR][eE][tT][uU][rR][nN]""".r
   val TRUE: Parser[String] = """[tT][rR][uU][eE]""".r
   val FALSE: Parser[String] = """[fF][aA][lL][sS][eE]""".r
@@ -97,7 +128,7 @@ trait CodeableObject extends Types with Values {
   }
   
   def statement: Parser[Statement] = {
-    ifStatement | returnStatement
+    ifStatement | booleanReturnStatement
   }
   
   def ifStatement: Parser[IfThenElseStatement] = 
@@ -128,9 +159,9 @@ trait CodeableObject extends Types with Values {
   
   def elseStmt: Parser[ElseStatement] = { ELSE~"{"~>block<~"}" ^^ (b => ElseStatement(Block(b)))}
    
-  def returnStatement: Parser[ReturnStatement] = {
-    RETURN~>TRUE ^^ { _ => ReturnStatement(true) } | 
-    RETURN~>FALSE ^^ {_ => ReturnStatement(false) }
+  def booleanReturnStatement: Parser[BooleanReturnStatement] = {
+    RETURN~>TRUE ^^ { _ => BooleanReturnStatement(true) } | 
+    RETURN~>FALSE ^^ {_ => BooleanReturnStatement(false) }
   }
 
   def condition: Parser[Condition] = {
@@ -138,16 +169,16 @@ trait CodeableObject extends Types with Values {
   }
   
   def booleanFunction: Parser[BooleanFunction] = {
-     "!"~"("~>booleanFunction<~")" ^^ { (x => Negation(x)) } |
-     booleanFunction~AND~booleanFunction ^^ { case lhs~and~rhs => And(lhs, rhs) }
-     booleanFunction~OR~booleanFunction ^^ { case lhs~or~rhs => Or(lhs, rhs) } 
-     "("~>booleanFunction<~")" |
-     reference~"<"~reference ^^ { case lhs~less~rhs => Less(lhs, rhs) }
-     reference~"<="~reference ^^ { case lhs~lesseq~rhs => LessOrEqual(lhs, rhs) } |
-     reference~"=="~reference ^^ { case lhs~eqeq~rhs => EqualEqual(lhs, rhs) } |
-     reference~"!="~reference ^^ { case lhs~noteq~rhs => NotEqual(lhs, rhs) } |     
-     reference~">="~reference ^^ { case lhs~greq~rhs => Greater(lhs, rhs) } |
-     reference~">"~reference ^^ { case lhs~less~rhs => GreaterOrEqual(lhs, rhs) }
+    "!"~"("~>booleanFunction<~")" ^^ { (x => Negation(x)) } |
+    booleanFunction~AND~booleanFunction ^^ { case lhs~and~rhs => And(lhs, rhs) }
+    booleanFunction~OR~booleanFunction ^^ { case lhs~or~rhs => Or(lhs, rhs) } 
+    "("~>booleanFunction<~")" |
+    reference~"<"~reference ^^ { case lhs~less~rhs => Less(lhs, rhs) }
+    reference~"<="~reference ^^ { case lhs~lesseq~rhs => LessOrEqual(lhs, rhs) } |
+    reference~"=="~reference ^^ { case lhs~eqeq~rhs => EqualEqual(lhs, rhs) } |
+    reference~"!="~reference ^^ { case lhs~noteq~rhs => NotEqual(lhs, rhs) } |     
+    reference~">="~reference ^^ { case lhs~greq~rhs => Greater(lhs, rhs) } |
+    reference~">"~reference ^^ { case lhs~less~rhs => GreaterOrEqual(lhs, rhs) }
   }
   
   def reference: Parser[Reference] = {
@@ -157,20 +188,34 @@ trait CodeableObject extends Types with Values {
   
   def memberReference: Parser[Reference] = {
     objectMemberReference |
-    arrayReference |
+    vectorReference |
+    mapReference |
     NAME ^^ {(x => MemberReference(x))}
   }
   
   def objectMemberReference: Parser[QualifiedMemberReference] = {
+    NAME~"."~functionReference ^^ {
+      case obj~dot~member => QualifiedMemberReference(obj, member)
+    } |
     NAME~"."~memberReference ^^ {
       case obj~dot~member => QualifiedMemberReference(obj, member)
     }
   }
   
-  def arrayReference: Parser[ArrayReference] = {
-    NAME~"["~wholeNumber~"]" ^^ {case name~bracket~wholenumber~bracket1 => ArrayReference(name, wholenumber)}
+  def functionReference: Parser[FunctionReference] = {
+    EQUALS~"("~>memberReference<~")" ^^ (EqualsReference(_)) |
+    COMPARE~"("~>memberReference<~")" ^^ (CompareReference(_)) |
+    FOREACH~>block ^^ (stmts => Foreach(Block(stmts)))
   }
-    
+  
+  def vectorReference: Parser[VectorReference] = {
+    NAME~"["~wholeNumber~"]" ^^ {case id~bracket~wholenumber~bracket1 => VectorReference(id, wholenumber)}
+  }
+  
+  def mapReference: Parser[MapReference] = {
+    NAME~"["~reference~"]" ^^ {case id~bracket~ref~bracket1 => MapReference(id, ref)}
+  }
+  
   def block: Parser[List[Statement]] = {
     "{"~>repsep(statement, ",")<~"}" ^^ (List() ++ _)
   }
@@ -178,19 +223,12 @@ trait CodeableObject extends Types with Values {
   def compare: Parser[Any] = null 
 }
 
-trait Singleton extends CodeableObject {
-  val SINGLETON: Parser[String] = """[sS][iI][nN][gG][lL][eE][tT][oO][nN]""".r
+trait Object extends CodeableObject {
+  val OBJECT: Parser[String] = """[oO][bB][jJ][eE][cC][tT]""".r
   def singleton: Parser[SingletonDef] = {
-      SINGLETON~NAME~"{"~typeList~"}" ^^ {
+      OBJECT~NAME~"{"~typeList~"}" ^^ {
         case singleton~name~"{"~typelist~"}" => SingletonDef(name, typelist)
       }
-  }
-}
-
-trait Vector extends Types {
-  val VECTOR: Parser[String] = """[vV][eE][cC][tT][eE][rR]""".r
-  def vector: Parser[VectorDef] = {
-    VECTOR~NAME~"["~argotType~"]"  ^^ {case vector~name~"["~argottype~"]" => VectorDef(name, argottype)}
   }
 }
 
@@ -199,4 +237,7 @@ trait Table extends Types {
   def table: Parser[TableDef] = {
     TABLE~NAME~"{"~"}" ^^ {case table~name~"{"~"}" => TableDef(name)}
   }
+}
+
+trait StorableObjects extends JavaTokenParsers with Table with SpecialTypes with Object {
 }

@@ -15,7 +15,7 @@ case class TableName(s: String) extends ArgotParseTree
 case class ColumnList(columns: List[ColumnName]) extends ArgotParseTree
 case class ValueList(values: List[Value]) extends ArgotParseTree
 
-case class Value(value: Any) extends ArgotParseTree
+case class Value(value: Any) extends Reference
 case class NullValue extends Value(null)
 case class ArgotBooleanValue(b: Boolean) extends Value(b)
 case class IntegralNumber(i: Long) extends Value(i)
@@ -55,29 +55,34 @@ case class CompartorMethod extends Method
 
 abstract class Statement extends Method
 case class ReturnStatement(b: Boolean) extends Statement
-case class IfStatement(c: Condition, b: Block) extends Statement
+case class IfThenElseStatement(clauses: List[SubStatement]) extends Statement
 
 abstract class SubStatement extends Statement
-case class ElseIfStatement extends SubStatement
-case class ElseStatement extends SubStatement
-case class Condition extends SubStatement
-case class Block extends SubStatement
+case class IfStatement(c: Condition, b: Block) extends SubStatement
+case class ElseIfStatement(c: Condition, b: Block) extends SubStatement
+case class ElseStatement(b: Block) extends SubStatement
 
-abstract class Reference extends Method
-case class Complement extends Reference
-case class MemberReference(id: String, c: Complement) extends Reference
-case class QualifiedMemberReference(id: String, c: Complement) extends Reference
+abstract class SubStatementComponent extends SubStatement
+case class Condition(f: BooleanFunction) extends SubStatementComponent
+case class Block(l: List[Statement]) extends SubStatementComponent
 
-abstract class Comparator extends Method
-case class Less extends Comparator
-case class LessOrEqual extends Comparator
-case class EqualEqual extends Comparator
-case class GreaterOrEqual extends Comparator
-case class Greater extends Comparator
+abstract class BooleanFunction
+case class Negation(f: BooleanFunction) extends BooleanFunction
+abstract class Comparator extends BooleanFunction
+case class Less(lhs: Reference, rhs: Reference)  extends Comparator
+case class LessOrEqual(lhs: Reference, rhs: Reference) extends Comparator
+case class EqualEqual(lhs: Reference, rhs: Reference) extends Comparator
+case class NotEqual(lhs: Reference, rhs: Reference) extends Comparator
+case class GreaterOrEqual(lhs: Reference, rhs: Reference) extends Comparator
+case class Greater(lhs: Reference, rhs: Reference) extends Comparator
+abstract class Connector extends BooleanFunction
+case class And(lhs: BooleanFunction, rhs: BooleanFunction) extends Connector
+case class Or(lhs: BooleanFunction, rhs: BooleanFunction) extends Connector
 
-abstract class Connector extends Method
-case class And extends Connector
-case class Or extends Connector
+abstract class Reference
+case class MemberReference(member: String) extends Reference
+case class ArrayReference(name: String, index: String) extends Reference
+case class QualifiedMemberReference(obj: String, member: Reference) extends Reference
 
 abstract class InsertOption extends ArgotParseTree         
 case class Delayed extends InsertOption

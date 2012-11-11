@@ -48,45 +48,25 @@ trait Types extends Commons {
   def key: Parser[Key] = PRIMARY ^^ (x => PrimaryKey()) | FOREIGN ^^ (x => ForeignKey()) | INDEX ^^ (x => IndexKey())
 }
 
-/*
- 
+/* 
  codeable apple extends fruit  {
    codeable seeds;
    
 }
- 
- codeable fruit {
-   string name,
-   integer shelflife
-   
-   equals {
-     if ( and || !) {
-         if () {
-         }
-     } else if(
-   
-   equals <- "{"~functionStmts~"}"
-   funtionStmts <- functionStmt~opt(rep(functionStmt))
-   functionStmt <- returnStmt | ifStmt
-   returnStmt <- RETURN BOOLEAN~";"
-   ifStmt <- IF~conditionalStmt~blockStmt~opt(rep(elseIfStmt))~opt(else)
-   blockStmt <- "{"~opt(block)~"}"
-   block <- rep(ifStmt) | returnStmt
-   elseIfStmt <- ELSEIF~conditionalStmt~blockStmt
-   elseStmt <- blockStmt
-   conditionalStmt <-  "("~condition~")"
-   condition <- reference~comparator~reference~opt(rep(connector~condition)) 
-   reference <- memberReference | memberAccessReference | constant
-   constant <- Number | stringLiteral
-   memberReference <- opt("!")~NAME 
-   memberAccessReference <- opt("!")~NAME~"."~opt("!")~NAME
-   comparator <- "==" | "!=" | "<" | ">" | "<=" | ">="
-   connector <- "and" | "or" 
- }
-  }
- */
 
-trait CodeableObject extends Types {
+codeable fruit {
+  string name,
+  integer shelflife
+   
+  equals {
+    if ( and || !) {
+      if (... and/or ...) {
+      }
+     } else if(...)
+ 
+   }
+   */
+trait CodeableObject extends Types with Values {
   val EXTENDS: Parser[String] = """[eE][xX][tT][eE][nN][dD][sS]""".r
   val AND: Parser[String] = """[aA][nN][dD]""".r
   val OR: Parser[String] = """[oO][rR]""".r
@@ -95,6 +75,8 @@ trait CodeableObject extends Types {
   val TRUE: Parser[String] = """[tT][rR][uU][eE]""".r
   val FALSE: Parser[String] = """[fF][aA][lL][sS][eE]""".r
   val IF: Parser[String] = """[iI][fF]""".r
+  val ELSEIF: Parser[String] = """[eE][lL][sS][eE][iI][fF]""".r
+  val ELSE: Parser[String] = """[eE][lL][sS][eE]""".r
   
   def codeable: Parser[Codeable] = {
     CODEABLE~NAME~opt(optionalExtends)~"{"~typeList~opt(equals)~opt(compare)~"}" ^^ {
@@ -106,7 +88,7 @@ trait CodeableObject extends Types {
   def equals: Parser[EqualsMethod] = {
     EQUALS~"{"~>functionStmt<~"}" ^^ (functionstmt => EqualsMethod(functionstmt)) 
   }
- 
+
   def functionStmt: Parser[List[Statement]] = {
     statement~opt(rep(statement)) ^^ {case stmt~optrepmultistmt => 
       if(optrepmultistmt.get != None) List(stmt) ++ optrepmultistmt.get 
@@ -118,16 +100,81 @@ trait CodeableObject extends Types {
     ifStatement | returnStatement
   }
   
-  def ifStatement: Parser[IfStatement] = { IF~"("~>conditionalStmt~")"~"{"~blockStmt<~"}" ^^ 
-    {case conditional~")"~"{"~block => IfStatement(conditional, block)}
+  def ifStatement: Parser[IfThenElseStatement] = 
+    singleIf~opt(elseIfStmt)~opt(elseStmt) ^^ {case ifstmt~elseifstmt~elsestmt => {
+      if(elseifstmt.get != None && elsestmt.get != None) {
+        val clauses = ifstmt :: elseifstmt.get :: elsestmt.get :: List[SubStatement]()
+        IfThenElseStatement(clauses)
+      } else if(elseifstmt.get != None) {
+        val clauses = ifstmt :: elseifstmt.get :: List[SubStatement]()
+        IfThenElseStatement(clauses)
+      } else if(elsestmt.get != None) {
+        val clauses = ifstmt :: elsestmt.get :: List[SubStatement]()
+        IfThenElseStatement(clauses)
+      } else {
+        val clauses = ifstmt :: List[SubStatement]()
+        IfThenElseStatement(clauses)
+      }
+    }
+  }
+ 
+  def singleIf: Parser[IfStatement] = { IF~"("~>condition~")"~"{"~block<~"}" ^^ 
+    {case conditional~")"~"{"~block => IfStatement(conditional, Block(block))}
   }
   
+  def elseIfStmt: Parser[ElseIfStatement] = { ELSEIF~"("~>condition~")"~"{"~block<~"}" ^^ 
+    {case conditional~")"~"{"~block => ElseIfStatement(conditional, Block(block))}    
+  }
+  
+  def elseStmt: Parser[ElseStatement] = { ELSE~"{"~>block<~"}" ^^ (b => ElseStatement(Block(b)))}
+   
   def returnStatement: Parser[ReturnStatement] = {
     RETURN~>TRUE ^^ { _ => ReturnStatement(true) } | 
     RETURN~>FALSE ^^ {_ => ReturnStatement(false) }
   }
-  def conditionalStmt: Parser[Condition] = null
-  def blockStmt: Parser[Block] = null
+
+  def condition: Parser[Condition] = {
+    booleanFunction ^^ { (x => Condition(x)) }
+  }
+  
+  def booleanFunction: Parser[BooleanFunction] = {
+     "!"~"("~>booleanFunction<~")" ^^ { (x => Negation(x)) } |
+     booleanFunction~AND~booleanFunction ^^ { case lhs~and~rhs => And(lhs, rhs) }
+     booleanFunction~OR~booleanFunction ^^ { case lhs~or~rhs => Or(lhs, rhs) } 
+     "("~>booleanFunction<~")" |
+     reference~"<"~reference ^^ { case lhs~less~rhs => Less(lhs, rhs) }
+     reference~"<="~reference ^^ { case lhs~lesseq~rhs => LessOrEqual(lhs, rhs) } |
+     reference~"=="~reference ^^ { case lhs~eqeq~rhs => EqualEqual(lhs, rhs) } |
+     reference~"!="~reference ^^ { case lhs~noteq~rhs => NotEqual(lhs, rhs) } |     
+     reference~">="~reference ^^ { case lhs~greq~rhs => Greater(lhs, rhs) } |
+     reference~">"~reference ^^ { case lhs~less~rhs => GreaterOrEqual(lhs, rhs) }
+  }
+  
+  def reference: Parser[Reference] = {
+    memberReference |
+    value
+  }
+  
+  def memberReference: Parser[Reference] = {
+    objectMemberReference |
+    arrayReference |
+    NAME ^^ {(x => MemberReference(x))}
+  }
+  
+  def objectMemberReference: Parser[QualifiedMemberReference] = {
+    NAME~"."~memberReference ^^ {
+      case obj~dot~member => QualifiedMemberReference(obj, member)
+    }
+  }
+  
+  def arrayReference: Parser[ArrayReference] = {
+    NAME~"["~wholeNumber~"]" ^^ {case name~bracket~wholenumber~bracket1 => ArrayReference(name, wholenumber)}
+  }
+    
+  def block: Parser[List[Statement]] = {
+    "{"~>repsep(statement, ",")<~"}" ^^ (List() ++ _)
+  }
+  
   def compare: Parser[Any] = null 
 }
 

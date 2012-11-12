@@ -28,6 +28,11 @@ abstract class Key extends ArgotParseTree
 case class PrimaryKey extends Key
 case class ForeignKey extends Key
 case class IndexKey extends Key
+case class NoKey extends Key
+
+abstract class StorageStrategy extends ArgotParseTree
+case class Compose extends StorageStrategy
+case class Decompose extends StorageStrategy
 
 abstract class ArgotType extends ArgotParseTree
 case class ArgotTypeType(id: String, key: Key) extends ArgotType
@@ -42,13 +47,15 @@ case class ArgotDouble(id: String, key: Key) extends ArgotType
 case class ArgotString(id: String, key: Key) extends ArgotType
 case class ArgotBinary(id: String, key: Key) extends ArgotType
 case class VectorDef(typeName: String, id: String) extends ArgotType
-case class MapDef(typeName: String, valueName: String, id: String) extends ArgotType
-case class CodeableRef(typeName: String, id: String, decomposed: String, key: Key) extends ArgotType
+
+abstract class ArgotSpecialType extends ArgotType
+case class MapDef(keyName: String, valueName: String, id: String) extends ArgotSpecialType
+case class CodeableRef(typeName: String, id: String, storageStrategy: StorageStrategy, key: Key) extends ArgotSpecialType
 
 abstract class ArgotCompoundType extends ArgotType
 case class Codeable(typeName: String, superType: String, typeList: List[ArgotType]) extends ArgotCompoundType
 case class SingletonDef(typeName: String, typeList: List[ArgotType]) extends ArgotCompoundType
-case class TableDef(typeName: String) extends ArgotCompoundType
+case class TableDef(id: String, typeList: List[ArgotType]) extends ArgotCompoundType
 
 abstract class Method extends ArgotParseTree
 case class EqualsMethod(functionBody: List[Statement]) extends Method
@@ -96,7 +103,7 @@ abstract class InsertOption extends ArgotParseTree
 case class Delayed extends InsertOption
 case class LowPriority extends InsertOption
 case class HighPriority extends InsertOption
-case class None extends InsertOption
+case class NoOption extends InsertOption
 case class InsertStmt(tableName: TableName, insertOption: InsertOption, columns: ColumnList, values: ValueList) extends ArgotParseTree 
 
 trait Commons extends JavaTokenParsers {

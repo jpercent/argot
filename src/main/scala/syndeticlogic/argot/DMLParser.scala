@@ -50,11 +50,11 @@ trait Insert extends JavaTokenParsers with Values with Commons {
   def insertStmt: Parser[InsertStmt] = 
     INSERT~INTO~tableName~opt(insertOption)~opt("("~columnList~")")~VALUES~"("~valueList~");" ^^ {
           case insert~into~tname~insertops~clist~values~"("~vlist~");" if insertops == scala.None && clist == scala.None =>
-            InsertStmt(tname, None(), ColumnList(List()), ValueList(vlist))
+            InsertStmt(tname, NoOption(), ColumnList(List()), ValueList(vlist))
           case insert~into~tname~insertops~clist~values~"("~vlist~");" if insertops == scala.None =>
-            InsertStmt(tname, None(), ColumnList(columns(clist)), ValueList(vlist))
+            InsertStmt(tname, NoOption(), ColumnList(columns(clist)), ValueList(vlist))
           case insert~into~tname~insertops~clist~values~"("~vlist~");" if clist == scala.None =>
-            InsertStmt(tname, None(), ColumnList(List()), ValueList(vlist))
+            InsertStmt(tname, NoOption(), ColumnList(List()), ValueList(vlist))
           case insert~into~tname~insertops~clist~values~"("~vlist~");" =>
             InsertStmt(tname, insertops.get, ColumnList(columns(clist)), ValueList(vlist))
       }
@@ -63,7 +63,7 @@ trait Insert extends JavaTokenParsers with Values with Commons {
     HIGH ^^ (x => HighPriority()) | 
     LOW ^^ (x => HighPriority()) | 
     DELAY ^^ (x => Delayed()) |
-    NONE ^^ (x => None())
+    NONE ^^ (x => NoOption())
   
   def columnList: Parser[List[ColumnName]] = repsep(columnName, ",") ^^ (List() ++ _) |
       columnName ^^ (id => List[ColumnName](id)) 

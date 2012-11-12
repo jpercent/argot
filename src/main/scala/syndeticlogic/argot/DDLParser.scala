@@ -33,7 +33,7 @@ trait Types extends Commons with SpecialTypes {
   val STRING: Parser[String] = """[sS][tT][rR][iI][nN][gG]""".r
   val BINARY: Parser[String] = """[bB][iI][nN][aA][rR][yY]""".r
   val CODEABLE: Parser[String] = """[cC][oO][dD][eE][aA][bB][lL][eE]""".r
-  val DECOMPOSED: Parser[String] = """[dD][eE][cC][oO][mM][pP][oO][sS][eE][dD]""".r
+  val DECOMPOSE: Parser[String] = """[dD][eE][cC][oO][mM][pP][oO][sS][eE]""".r
   val PRIMARY: Parser[String] = """[pP][rR][iI][mM][aA][rR][yY]""".r
   val FOREIGN: Parser[String] = """[fF][oO][rR][eE][iI][gG][nN]""".r
   val INDEX: Parser[String] = """[iI][nN][eE][xX]""".r
@@ -42,19 +42,33 @@ trait Types extends Commons with SpecialTypes {
       argotType ^^ (id => List[ArgotType](id))
 
   def argotType: Parser[ArgotType] = {
-    TYPE~NAME~opt(key) ^^ {case atype~name~optkey => ArgotTypeType(name, optkey.get)} |
-    BOOLEAN~NAME~opt(key) ^^ {case atype~name~optkey => ArgotBoolean(name, optkey.get)} |
-    BYTE~NAME~opt(key) ^^ {case atype~name~optkey => ArgotByte(name, optkey.get)} |
+    TYPE~NAME~opt(key) ^^ {
+      case atype~name~Some(optkey) => ArgotTypeType(name, optkey)
+      case atype~name~None => ArgotTypeType(name, NoKey())
+    } |
+    BOOLEAN~NAME~opt(key) ^^ {
+      case atype~name~Some(optkey) => ArgotBoolean(name, optkey)
+      case atype~name~None => ArgotBoolean(name, NoKey())
+    } |
+    BYTE~NAME~opt(key) ^^ {
+      case atype~name~optkey => ArgotByte(name, optkey.get)
+    } |
     CHAR~NAME~opt(key) ^^ {case atype~name~optkey => ArgotChar(name, optkey.get)} |
     SHORT~NAME~opt(key) ^^ {case atype~name~optkey => ArgotShort(name, optkey.get)} |      
-    INTEGER~NAME~opt(key) ^^ {case atype~name~optkey => ArgotInteger(name, optkey.get)} |
+    INTEGER~NAME~opt(key) ^^ {
+      case atype~name~Some(optkey) => ArgotInteger(name, optkey)
+      case atype~name~None => ArgotInteger(name, NoKey())
+    }|
     LONG~NAME~opt(key) ^^ {case atype~name~optkey => ArgotLong(name, optkey.get)} |
     FLOAT~NAME~opt(key) ^^ {case atype~name~optkey => ArgotFloat(name, optkey.get)} |      
     DOUBLE~NAME~opt(key) ^^ {case atype~name~optkey => ArgotDouble(name, optkey.get)} |
     STRING~NAME~opt(key) ^^ {case atype~name~optkey => ArgotString(name, optkey.get)} |
     BINARY~NAME~opt(key) ^^ {case atype~name~optkey => ArgotBinary(name,optkey.get)} |
-    CODEABLE~NAME~NAME~opt(DECOMPOSED)~opt(key) ^^ {
-      case atype~name~name1~decomposed~optkey => CodeableRef(name, name1, decomposed.get, optkey.get)
+    CODEABLE~NAME~NAME~opt(DECOMPOSE)~opt(key) ^^ {
+      case atype~name~name1~Some(decomposed)~Some(optkey) => CodeableRef(name, name1, Decompose(), optkey)
+      case atype~name~name1~Some(decomposed)~None => CodeableRef(name, name1, Decompose(), NoKey())
+      case atype~name~name1~None~Some(optkey) => CodeableRef(name, name1, Compose(), optkey)
+      case atype~name~name1~None~None => CodeableRef(name, name1, Compose(), NoKey())      
     } |
     vector |
     map
@@ -127,7 +141,7 @@ trait CodeableObject extends Types with Values with SpecialTypes {
 
   def functionStmt: Parser[List[Statement]] = {
     statement~opt(rep(statement)) ^^ {case stmt~optrepmultistmt => 
-      if(optrepmultistmt.get != None) List(stmt) ++ optrepmultistmt.get 
+      if(optrepmultistmt.get != NoOption) List(stmt) ++ optrepmultistmt.get 
       else List(stmt)
     }
   }
@@ -138,13 +152,13 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   
   def ifStatement: Parser[IfThenElseStatement] = 
     singleIf~opt(elseIfStmt)~opt(elseStmt) ^^ {case ifstmt~elseifstmt~elsestmt => {
-      if(elseifstmt.get != None && elsestmt.get != None) {
+      if(elseifstmt.get != NoOption && elsestmt.get != NoOption) {
         val clauses = ifstmt :: elseifstmt.get :: elsestmt.get :: List[SubStatement]()
         IfThenElseStatement(clauses)
-      } else if(elseifstmt.get != None) {
+      } else if(elseifstmt.get != NoOption) {
         val clauses = ifstmt :: elseifstmt.get :: List[SubStatement]()
         IfThenElseStatement(clauses)
-      } else if(elsestmt.get != None) {
+      } else if(elsestmt.get != NoOption) {
         val clauses = ifstmt :: elsestmt.get :: List[SubStatement]()
         IfThenElseStatement(clauses)
       } else {
@@ -241,10 +255,10 @@ trait Object extends CodeableObject {
   }
 }
 
-trait Table extends Types {
+trait Table extends Types  {
   val TABLE: Parser[String] = """[tT][aA][bB][lL][eE]""".r
   def table: Parser[TableDef] = {
-    TABLE~NAME~"{"~"}" ^^ {case table~name~"{"~"}" => TableDef(name)}
+    TABLE~>NAME~"{"~typeList<~"}" ^^ {case id~"{"~typelist => TableDef(id, typelist)}
   }
 }
 

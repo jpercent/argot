@@ -3,11 +3,14 @@ package syndeticlogic.argot
 class DMLBuilder extends ArgotBuilder with ValueBuilder {
   
   def columnName(c: ColumnName): String = c.s
+  
   def tableName(t: TableName): String = t.s
+  
   def columnList(cl: ColumnList): String = {
     if(cl.columns.length == 0) ""
     else "("+columns(cl.columns, 0)+")"
   }
+  
   def columns(c: List[ColumnName], i: Int): String = {
     if(i == c.length-1) c(i).s
     else c(i).s + ","+ columns(c, i+1) 
@@ -21,7 +24,7 @@ class DMLBuilder extends ArgotBuilder with ValueBuilder {
     case _: Delayed => "delayed"
     case _: HighPriority => "highpriority"
     case _: LowPriority => "lowpriority"
-    case _: None => ""
+    case _: NoOption => ""
   }
   
   override def build(t: ArgotParseTree): String = t match {

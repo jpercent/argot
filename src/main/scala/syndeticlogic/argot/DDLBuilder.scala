@@ -1,37 +1,84 @@
 package syndeticlogic.argot
 
-class DDLBuilder extends ArgotBuilder with ValueBuilder {
+trait SpecialTypesBuilder {
+  def vector(v: VectorDef): String = "vector["+v.typeName+"] "+v.id
   
-  def columnName(c: ColumnName): String = c.s
-  def tableName(t: TableName): String = t.s
-  def columnList(cl: ColumnList): String = {
-    if(cl.columns.length == 0) ""
-    else "("+columns(cl.columns, 0)+")"
+  def map(m: MapDef): String = "map["+m.keyName+","+m.valueName+"] "+m.id
+  
+  def matchSpecialType(st: ArgotSpecialType): String = st match {
+    case x: VectorDef => vector(x)
+    case x: MapDef => map(x)
   }
-  def columns(c: List[ColumnName], i: Int): String = {
-    if(i == c.length-1) c(i).s
-    else c(i).s + ","+ columns(c, i+1) 
-  } 
+}
+
+trait KeyBuilder {
+  def key(key: Key): String = key match {
+      case x: PrimaryKey => " primary"
+      case x: ForeignKey => " foreign"
+      case x: IndexKey => " index"
+      case x: NoKey => ""
+  }
+}
+
+trait TypesBuilder extends KeyBuilder with SpecialTypesBuilder with Types {
+  def typeType(t: ArgotTypeType): String = "type "+t.id+ key(t.key)
+  
+  def booleanType(t: ArgotBoolean): String = "boolean "+t.id+key(t.key)
+  
+  def byteType(t: ArgotByte): String = "byte "+t.id+key(t.key)
+  
+  def integerType(t: ArgotInteger): String = "integer "+t.id+key(t.key)
+  
+  def codeableRef(t: CodeableRef): String = "codeable "+t.typeName+" "+t.id+key(t.key)+ storageStrategy(t.storageStrategy)
+  
+  def storageStrategy(s: StorageStrategy): String = s match {
+    case x: Compose => " compose"
+    case x: Decompose => " decompose"
+  }
+  
+  def matchTypes(t: List[ArgotType]): String = {
+    t.foldLeft("")((result, current) => concat(result, current))
+  }
  
-  def insert(i: InsertStmt): String = {
-    "insert into "+build(i.tableName)+build(i.insertOption)+build(i.columns)+" values "+build(i.values)
+  def concat(r: String, c: ArgotType): String = r match {
+      case "" => matchType(c)
+      case _ => r+", "+matchType(c) 
   }
  
-  def matchInsertOption(io: InsertOption): String = io match {
-    case _: Delayed => "delayed"
-    case _: HighPriority => "highpriority"
-    case _: LowPriority => "lowpriority"
-    case _: None => ""
+  def matchType(c: ArgotType): String = c match {
+    case x: ArgotTypeType => typeType(x)
+    case x: ArgotBoolean => booleanType(x)
+    case x: ArgotByte => byteType(x)
+    case x: ArgotChar => ""
+    case x: ArgotShort => ""
+    case x: ArgotInteger => integerType(x)
+    case x: ArgotLong => ""
+    case x: ArgotFloat => ""
+    case x: ArgotDouble => ""
+    case x: ArgotString => ""
+    case x: ArgotBinary => ""
+    case x: CodeableRef => codeableRef(x)
+    case x: ArgotSpecialType => matchSpecialType(x)
   }
+}
+
+trait TableBuilder extends TypesBuilder with SpecialTypes {
+}
+
+trait ObjectBuilder extends TypesBuilder with SpecialTypes {
+  def objectDef()
+}
+
+class DDLBuilder extends ArgotBuilder with TypesBuilder with SpecialTypesBuilder {
+
+  def tableDef(t: TableDef): String = "table "+t.id+" { "+matchTypes(t.typeList)+" }" 
+    
+  def objectDef(t: SingletonDef): String = ""
   
   override def build(t: ArgotParseTree): String = t match {
-    case x: InsertStmt => insert(x)
-    case x: Value => matchValue(x)
-    case x: InsertOption => matchInsertOption(x)
-    case x: ColumnName => columnName(x)
-    case x: TableName => tableName(x)
-    case x: ColumnList => columnList(x)
-    case x: ValueList => valueList(x)
+    case x: TableDef => tableDef(x)
+    case x: SingletonDef => objectDef(x)
+    case x: ArgotSpecialType => matchSpecialType(x)
   }  
 }
 

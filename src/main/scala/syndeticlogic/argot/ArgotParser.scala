@@ -9,7 +9,13 @@ import java.lang.RuntimeException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-class ArgotParser extends JavaTokenParsers with DML with DDL {}
+class ArgotParser extends JavaTokenParsers with DML with DDL {
+  def entryPoint: Parser[ArgotParseTree] = {
+    insertStmt |
+    table |
+    singleton
+  }
+}
 
 object ParseArgot extends ArgotParser {
   val logger: Log = LogFactory.getLog(this.getClass);
@@ -18,8 +24,9 @@ object ParseArgot extends ArgotParser {
     val reader = new StringReader(s)
     parse(reader)
   }
+  
   def parse(r: Reader): ArgotParseTree = {
-    val tree: ParseResult[ArgotParseTree] = parseAll(insertStmt, r)
+    val tree: ParseResult[ArgotParseTree] = parseAll(entryPoint, r)
     logger.debug(tree)
     try { tree.get }
     catch { case e: RuntimeException => {

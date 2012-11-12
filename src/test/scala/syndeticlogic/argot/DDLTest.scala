@@ -7,14 +7,14 @@ import org.junit.Before
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
-class ArgotDDLTest {
-  val query0 = "insert into tableName values (\"uno\");"
-  val expectedQuery0 = "insert into tableName values (\"uno\")"
-  val query1 = "insert into atable (col1,col2, col3) values(1,3,4);"
-  val expectedQuery1 = "insert into atable(col1,col2,col3) values (1,3,4)"
-  val query2 = "insert into values ()";
-  val expectedQuery2 = "";
-    
+class DDLTest {
+  val table0 = "table fact_table{boolean james,type typeValue}"
+  val expectedTable0 = "table fact_table { boolean james, type typeValue }"    
+  val table1 = "table customer { integer id primary,integer customer_address_id foreign, integer spend, "+
+               "codeable order orders decompose }";
+  val expectedTable1 = "table customer { integer id primary, integer customer_address_id foreign, integer spend, "+
+               "codeable order orders decompose }";
+  
   def parseTest(inputQuery: String): String = {
     var tree = ParseArgot.parse(inputQuery)
     assertTrue(tree != null)
@@ -24,20 +24,12 @@ class ArgotDDLTest {
     
   @Test
   def testCodeable(): Unit = {
-    assertEquals(expectedQuery0, parseTest(query0))
-    assertEquals(expectedQuery1, parseTest(query1))
-    var exception = false
-    try {
-        assertEquals(expectedQuery2, parseTest(query2))
-    } catch {
-      case e: RuntimeException => exception = true 
-    }
-    assertTrue(exception)
   }
   
   @Test
   def testTable(): Unit = {
-    
+    assertEquals(expectedTable0, parseTest(table0))
+    assertEquals(expectedTable1, parseTest(table1))    
   }
   
 }

@@ -248,5 +248,5 @@ trait Table extends Types {
   }
 }
 
-trait StorableObjects extends JavaTokenParsers with Table with SpecialTypes with Object {
+trait DDL extends JavaTokenParsers with Table with SpecialTypes with Object {
 }

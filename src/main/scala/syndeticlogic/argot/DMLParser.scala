@@ -69,6 +69,10 @@ trait Insert extends JavaTokenParsers with Values with Commons {
       columnName ^^ (id => List[ColumnName](id)) 
 }
 
+trait DML extends JavaTokenParsers with Insert {
+}
+
+
 /* 
 stmt:  insert_stmt { emit("STMT"); } 
    ;

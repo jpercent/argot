@@ -9,7 +9,7 @@ import java.lang.RuntimeException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-class ArgotParser extends JavaTokenParsers with Insert {}
+class ArgotParser extends JavaTokenParsers with DML with DDL {}
 
 object ParseArgot extends ArgotParser {
   val logger: Log = LogFactory.getLog(this.getClass);

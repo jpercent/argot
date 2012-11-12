@@ -105,3 +105,50 @@ trait Commons extends JavaTokenParsers {
   val tableName: Parser[TableName] = ident ^^ (id => TableName(id))
 }
 
+abstract class ArgotBuilder {
+  def build(t: ArgotParseTree): String;
+} 
+
+trait ValueBuilder {
+
+  def valueList(vl: ValueList): String = {
+    println("values list = "+vl.values)
+    "("+values(vl.values,0)+")"
+  }
+  def values(v: List[Value], i: Int): String = {
+    if(i == v.length-1) matchValue(v(i))
+    else matchValue(v(i)) + ","+ values(v, i+1) 
+  }
+  
+  def nullValue(n: NullValue): String = "null"
+  def argotBoolean(b: ArgotBooleanValue): String = b.b.toString()
+  def integralNumber(i: IntegralNumber): String = i.i.toString()
+  def realNumber(r: RealNumber): String = r.d.toString()
+  def stringLiteral(s: StringLiteral): String = s.s
+  
+  def argotObject(ao: ArgotObjectValue): String = "{"+members(ao.obj.elements, ao.obj.size, 0)+"}"
+  def members(objiter: Iterator[(String, Value)], size: Int, i: Int): String = {
+    val entry = objiter.next()
+    if(i == size-1) entry._1 +":"+matchValue(entry._2) +","
+    else entry._1 +":"+matchValue(entry._2)+members(objiter, size, i+1)
+  }
+
+  def argotArray(aa: ArgotArray): String = "["+elements(aa.array, 0)+"]"
+  def elements(array: List[Value], i: Int): String = {
+    if(i == array.length-1) matchValue(array(i))
+    else matchValue(array(i)) + ","+elements(array, i+1)
+  }
+
+  def matchValue(v: Value): String = v match {
+    case x: NullValue => nullValue(x)
+    case x: ArgotBooleanValue => argotBoolean(x)
+    case x: IntegralNumber => integralNumber(x)
+    case x: RealNumber => realNumber(x)
+    case x: StringLiteral => stringLiteral(x)
+    case x: ArgotObjectValue => argotObject(x)
+    case x: ArgotArray => argotArray(x)
+  }
+}
+
+
+

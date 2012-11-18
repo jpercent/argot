@@ -13,12 +13,12 @@ trait SpecialTypes extends Commons {
     val VECTOR: Parser[String] = """[vV][eE][cC][tT][oO][rR]""".r
     val MAP: Parser[String] = """[mM][aA][pP]""".r
     def vector: Parser[VectorDef] = {
-      VECTOR~"["~>NAME~"]"~NAME ^^ {case typeName~rbracket~id => VectorDef(typeName, id) }
+      VECTOR~"["~>NAME~"]"~NAME ^^ {case typeName~rbracket~id => VectorDef(typeName, id, NoKey()) }
     }
     def map: Parser[MapDef] = {
-      MAP~"["~>NAME~","~NAME~"]"~NAME ^^ {case keyName~comma~valueName~rbracket~id => MapDef(keyName, valueName, id)}
+      MAP~"["~>NAME~","~NAME~"]"~NAME ^^ {case keyName~comma~valueName~rbracket~id => MapDef(keyName, valueName, id, NoKey())}
     }
-} 
+}
 
 trait Types extends Commons with SpecialTypes {
   val TYPE: Parser[String] = """[tT][yY][pP][eE]""".r
@@ -37,45 +37,59 @@ trait Types extends Commons with SpecialTypes {
   val PRIMARY: Parser[String] = """[pP][rR][iI][mM][aA][rR][yY]""".r
   val FOREIGN: Parser[String] = """[fF][oO][rR][eE][iI][gG][nN]""".r
   val INDEX: Parser[String] = """[iI][nN][eE][xX]""".r
+ 
+  def tableTypeList: Parser[List[ArgotType]] = repsep(argotTableType, ",") ^^ (List() ++ _) |
+      argotTableType ^^ (id => List[ArgotType](id))
   
+  def argotTableType: Parser[ArgotType] ={
+    argotType~opt(key) ^^ {
+      case atype~Some(key) => {atype match { 
+        case x: ArgotTypeType => ArgotTypeType(x.id, key) 
+        case x: ArgotBoolean => ArgotBoolean(x.id, key) 
+        case x: ArgotByte => ArgotByte(x.id, key) 
+        case x: ArgotChar => ArgotChar(x.id, key) 
+        case x: ArgotShort => ArgotShort(x.id, key) 
+        case x: ArgotInteger => ArgotInteger(x.id, key) 
+        case x: ArgotLong => ArgotLong(x.id, key) 
+        case x: ArgotFloat => ArgotFloat(x.id, key) 
+        case x: ArgotDouble => ArgotDouble(x.id, key) 
+        case x: ArgotString => ArgotString(x.id, key)         
+        case x: ArgotBinary => ArgotBinary(x.id, key) 
+        case x: CodeableRef => CodeableRef(x.typeName, x.id, x.storageStrategy, key)
+        case x: VectorDef => VectorDef(x.typeName, x.id, key)
+        case x: MapDef => MapDef(x.keyName, x.valueName, x.id, key)
+        }
+      }
+      case atype~None => atype
+    }
+  }
+      
   def typeList: Parser[List[ArgotType]] = repsep(argotType, ",") ^^ (List() ++ _) |
       argotType ^^ (id => List[ArgotType](id))
 
   def argotType: Parser[ArgotType] = {
-    TYPE~NAME~opt(key) ^^ {
-      case atype~name~Some(optkey) => ArgotTypeType(name, optkey)
-      case atype~name~None => ArgotTypeType(name, NoKey())
-    } |
-    BOOLEAN~NAME~opt(key) ^^ {
-      case atype~name~Some(optkey) => ArgotBoolean(name, optkey)
-      case atype~name~None => ArgotBoolean(name, NoKey())
-    } |
-    BYTE~NAME~opt(key) ^^ {
-      case atype~name~optkey => ArgotByte(name, optkey.get)
-    } |
-    CHAR~NAME~opt(key) ^^ {case atype~name~optkey => ArgotChar(name, optkey.get)} |
-    SHORT~NAME~opt(key) ^^ {case atype~name~optkey => ArgotShort(name, optkey.get)} |      
-    INTEGER~NAME~opt(key) ^^ {
-      case atype~name~Some(optkey) => ArgotInteger(name, optkey)
-      case atype~name~None => ArgotInteger(name, NoKey())
-    }|
-    LONG~NAME~opt(key) ^^ {case atype~name~optkey => ArgotLong(name, optkey.get)} |
-    FLOAT~NAME~opt(key) ^^ {case atype~name~optkey => ArgotFloat(name, optkey.get)} |      
-    DOUBLE~NAME~opt(key) ^^ {case atype~name~optkey => ArgotDouble(name, optkey.get)} |
-    STRING~NAME~opt(key) ^^ {case atype~name~optkey => ArgotString(name, optkey.get)} |
-    BINARY~NAME~opt(key) ^^ {case atype~name~optkey => ArgotBinary(name,optkey.get)} |
-    CODEABLE~NAME~NAME~opt(DECOMPOSE)~opt(key) ^^ {
-      case atype~name~name1~Some(decomposed)~Some(optkey) => CodeableRef(name, name1, Decompose(), optkey)
-      case atype~name~name1~Some(decomposed)~None => CodeableRef(name, name1, Decompose(), NoKey())
-      case atype~name~name1~None~Some(optkey) => CodeableRef(name, name1, Compose(), optkey)
-      case atype~name~name1~None~None => CodeableRef(name, name1, Compose(), NoKey())      
+    TYPE~NAME ^^ {case atype~name => ArgotTypeType(name, NoKey())} |
+    BOOLEAN~NAME ^^ {case atype~name => ArgotBoolean(name, NoKey())} |
+    BYTE~NAME ^^ {case atype~name => ArgotByte(name, NoKey())} |
+    CHAR~NAME ^^ {case atype~name => ArgotChar(name, NoKey())} |
+    SHORT~NAME ^^ {case atype~name => ArgotShort(name, NoKey())} |      
+    INTEGER~NAME ^^ {case atype~name => ArgotInteger(name, NoKey())}|
+    LONG~NAME ^^ {case atype~name => ArgotLong(name, NoKey())} |
+    FLOAT~NAME ^^ {case atype~name => ArgotFloat(name, NoKey())} |      
+    DOUBLE~NAME ^^ {case atype~name => ArgotDouble(name, NoKey())} |
+    STRING~NAME ^^ {case atype~name => ArgotString(name, NoKey())} |
+    BINARY~NAME ^^ {case atype~name => ArgotBinary(name,NoKey())} |
+    CODEABLE~NAME~NAME~opt(DECOMPOSE) ^^ {
+      case atype~name~name1~Some(decomposed) => CodeableRef(name, name1, Decompose(), NoKey())
+      case atype~name~name1~None => CodeableRef(name, name1, Compose(), NoKey())      
     } |
     vector |
     map
   }
-      
+ 
   def key: Parser[Key] = PRIMARY ^^ (x => PrimaryKey()) | FOREIGN ^^ (x => ForeignKey()) | INDEX ^^ (x => IndexKey())
 }
+
 
 trait CodeableObject extends Types with Values with SpecialTypes {
   val EXTENDS: Parser[String] = """[eE][xX][tT][eE][nN][dD][sS]""".r
@@ -98,8 +112,8 @@ trait CodeableObject extends Types with Values with SpecialTypes {
       case codeable~name~Some(supertype)~"{"~typelist~Some(optmethod)~None~"}" => Codeable(name, supertype, typelist, optmethod, MethodUndefined())
       case codeable~name~Some(supertype)~"{"~typelist~None~None~"}" => Codeable(name, supertype, typelist, MethodUndefined(), MethodUndefined())
       case codeable~name~None~"{"~typelist~Some(optmethod)~Some(optmethod1)~"}" => Codeable(name, "", typelist, optmethod, optmethod1)
-      case codeable~name~None~"{"~typelist~Some(optmethod)~None~"}" => Codeable(name, "", typelist, optmethod, MethodUndefined())
-      case codeable~name~None~"{"~typelist~None~None~"}" => Codeable(name, "", typelist, MethodUndefined(), MethodUndefined())
+      case codeable~name~None~"{"~typelist~Some(optmethod)~None~"}" => Codeable(name, "", typelist, optmethod, MethodUndefined())      
+      case codeable~name~None~"{"~typelist~None~None~"}" => { println("HERE "); Codeable(name, "", typelist, MethodUndefined(), MethodUndefined())}
     }
   }
   
@@ -236,7 +250,7 @@ trait Object extends CodeableObject {
 trait Table extends Types  {
   val TABLE: Parser[String] = """[tT][aA][bB][lL][eE]""".r
   def table: Parser[TableDef] = {
-    TABLE~>NAME~"{"~typeList<~"}" ^^ {case id~"{"~typelist => TableDef(id, typelist)}
+    TABLE~>NAME~"{"~tableTypeList<~"}" ^^ {case id~"{"~typelist => TableDef(id, typelist)}
   }
 }
 

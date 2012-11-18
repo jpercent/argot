@@ -34,7 +34,7 @@ abstract class StorageStrategy extends ArgotParseTree
 case class Compose extends StorageStrategy
 case class Decompose extends StorageStrategy
 
-abstract class ArgotType extends ArgotParseTree
+abstract class ArgotType extends ArgotParseTree 
 case class ArgotTypeType(id: String, key: Key) extends ArgotType
 case class ArgotBoolean(id: String, key: Key) extends ArgotType
 case class ArgotByte(id: String, key: Key) extends ArgotType
@@ -46,13 +46,14 @@ case class ArgotFloat(id: String, key: Key) extends ArgotType
 case class ArgotDouble(id: String, key: Key) extends ArgotType
 case class ArgotString(id: String, key: Key) extends ArgotType
 case class ArgotBinary(id: String, key: Key) extends ArgotType
-case class VectorDef(typeName: String, id: String) extends ArgotType
 
 abstract class ArgotSpecialType extends ArgotType
-case class MapDef(keyName: String, valueName: String, id: String) extends ArgotSpecialType
+case class VectorDef(typeName: String, id: String, key: Key) extends ArgotSpecialType
+case class MapDef(keyName: String, valueName: String, id: String, key: Key) extends ArgotSpecialType
 case class CodeableRef(typeName: String, id: String, storageStrategy: StorageStrategy, key: Key) extends ArgotSpecialType
 
 abstract class ArgotCompoundType extends ArgotType
+case class TypeDefinition(typeName: String, superType: String, typeList: List[ArgotType], method: Method, method1: Method) extends ArgotCompoundType
 case class Codeable(typeName: String, superType: String, typeList: List[ArgotType], method: Method, method1: Method) extends ArgotCompoundType
 case class SingletonDef(typeName: String, typeList: List[ArgotType]) extends ArgotCompoundType
 case class TableDef(id: String, typeList: List[ArgotType]) extends ArgotCompoundType

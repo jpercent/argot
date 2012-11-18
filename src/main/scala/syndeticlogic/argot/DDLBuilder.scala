@@ -29,10 +29,10 @@ trait TypesBuilder extends KeyBuilder with SpecialTypesBuilder with Types {
   
   def integerType(t: ArgotInteger): String = "integer "+t.id+key(t.key)
   
-  def codeableRef(t: CodeableRef): String = "codeable "+t.typeName+" "+t.id+key(t.key)+ storageStrategy(t.storageStrategy)
+  def codeableRef(t: CodeableRef): String = "codeable "+t.typeName+" "+t.id+ storageStrategy(t.storageStrategy)
   
   def storageStrategy(s: StorageStrategy): String = s match {
-    case x: Compose => " compose"
+    case x: Compose => ""
     case x: Decompose => " decompose"
   }
   
@@ -62,23 +62,30 @@ trait TypesBuilder extends KeyBuilder with SpecialTypesBuilder with Types {
   }
 }
 
-trait TableBuilder extends TypesBuilder with SpecialTypes {
+trait TableBuilder extends TypesBuilder with SpecialTypes {   
+  def tableDef(t: TableDef): String = "table "+t.id+" { "+matchTypes(t.typeList)+" }" 
 }
 
 trait ObjectBuilder extends TypesBuilder with SpecialTypes {
-  def objectDef()
+  def matchMethod(t: Method): String = {""}
+  
+  def superType(s: String): String = {  
+    if("".equals(s)) ""
+    else " extends "+s
+  }
+  
+  def objectDef(t: SingletonDef): String = "object "+t.typeName+" { "+matchTypes(t.typeList)+" }" 
+  
+  def codeableDef(t: Codeable): String =  
+    "codeable "+t.typeName+superType(t.superType)+" { "+matchTypes(t.typeList)+matchMethod(t.method)+matchMethod(t.method1)+" } " 
 }
 
-class DDLBuilder extends ArgotBuilder with TypesBuilder with SpecialTypesBuilder {
-
-  def tableDef(t: TableDef): String = "table "+t.id+" { "+matchTypes(t.typeList)+" }" 
-    
-  def objectDef(t: SingletonDef): String = ""
-  
+class DDLBuilder extends ArgotBuilder with TypesBuilder with ObjectBuilder with TableBuilder {   
   override def build(t: ArgotParseTree): String = t match {
     case x: TableDef => tableDef(x)
     case x: SingletonDef => objectDef(x)
     case x: ArgotSpecialType => matchSpecialType(x)
+    case x: Codeable => codeableDef(x)
   }  
 }
 

@@ -14,6 +14,8 @@ import scala.io.Source._
 class ArgotParserTest {
   val codeable0 =  "src/test/resources/test-files/codeable0.argot"
   val codeable0Expected =  "src/test/resources/test-files/codeable0Expected.argot"
+  val codeable1 =  "src/test/resources/test-files/codeable0.argot"
+  val codeable1Expected =  "src/test/resources/test-files/codeable0Expected.argot"
 
   val table0 = "src/test/resources/test-files/table0.argot"
   val table0Expected = "src/test/resources/test-files/table0Expected.argot"
@@ -37,11 +39,11 @@ class ArgotParserTest {
     })
   }
 
-  def test(input: String, expected: String, builder: ArgotBuilder): Unit = {
+  def test(expected: String, input: String, builder: ArgotBuilder): Unit = {
     assertEquals(fromFile(expected, "utf-8").getLines.mkString, parseTest(fromFile(input, "utf-8").getLines.mkString, builder))
   }
   
-  def testException(input: String, expected: String, builder: ArgotBuilder): Unit = {
+  def testException(expected: String, input: String, builder: ArgotBuilder): Unit = {
     var exception = false
     try {
         assertEquals(fromFile(expected, "utf-8").getLines.mkString, parseTest(fromFile(input, "utf-8").getLines.mkString, builder))
@@ -53,19 +55,20 @@ class ArgotParserTest {
   
   @Test
   def testCodeable(): Unit = {
-   
+    test(codeable0Expected, codeable0, new DDLBuilder)
+    test(codeable1Expected, codeable1, new DDLBuilder)
   }
   
   @Test
   def testTable(): Unit = {
-    test(table0, table0Expected, new DDLBuilder)
-    test(table1, table1Expected, new DDLBuilder)
+    test(table0Expected, table0, new DDLBuilder)
+    test(table1Expected, table1, new DDLBuilder)
   }
   
   @Test
   def testInsert(): Unit = {
-    test(insert0, insert0Expected, new DMLBuilder)
-    test(insert1, insert1Expected, new DMLBuilder)
-    testException(insert2, insert2Expected, new DMLBuilder)
+    test(insert0Expected, insert0, new DMLBuilder)
+    test(insert1Expected, insert1, new DMLBuilder)
+    testException(insert2Expected, insert2, new DMLBuilder)
   }
 }

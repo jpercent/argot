@@ -1,0 +1,1 @@
+insert into atable (col1,col2, col3) values(1,3,4);

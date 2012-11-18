@@ -13,7 +13,8 @@ class ArgotParser extends JavaTokenParsers with DML with DDL {
   def argotStatement: Parser[ArgotParseTree] = {
     insertStmt |
     table |
-    singleton
+    singleton |
+    codeable
   }
   
   def entryPoint: Parser[List[ArgotParseTree]] = rep(argotStatement) ^^ (List() ++ _)

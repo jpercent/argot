@@ -33,7 +33,6 @@ class ArgotParserTest {
       case _ => result +"\n"+current
     })
   }
-    
 
   @Test
   def testCodeable(): Unit = {
@@ -57,24 +56,5 @@ class ArgotParserTest {
       case e: RuntimeException => exception = true 
     }
     assertTrue(exception)
-  }
-  
-  // read a file an perseve end of line
-  def fileToString(file: File, encoding: String) = {
-    val inStream = new FileInputStream(file)
-    val outStream = new ByteArrayOutputStream
-    try {
-      var reading = true
-      while (reading) {
-        inStream.read() match {
-          case -1 => reading = false
-          case c => outStream.write(c)
-        }
-      }
-      outStream.flush()
-    } finally {
-      inStream.close()
-    }
-    new String(outStream.toByteArray(), encoding)
   }
 }

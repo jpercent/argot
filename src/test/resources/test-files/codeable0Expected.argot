@@ -1,0 +1,1 @@
+codeable apple extends fruit { codeable seedType seed } 

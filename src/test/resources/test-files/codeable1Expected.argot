@@ -1,0 +1,7 @@
+codeable fruit {
+  string name,
+  integer shelflife,
+  vector[integer] somevector,
+  map[key, value] somemap
+}
+

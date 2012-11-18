@@ -12,6 +12,9 @@ import java.io.ByteArrayOutputStream
 import scala.io.Source._
 
 class ArgotParserTest {
+  val codeable0 =  "src/test/resources/test-files/codeable0.argot"
+  val codeable0Expected =  "src/test/resources/test-files/codeable0Expected.argot"
+
   val table0 = "src/test/resources/test-files/table0.argot"
   val table0Expected = "src/test/resources/test-files/table0Expected.argot"
   val table1 = "src/test/resources/test-files/table1.argot"
@@ -34,27 +37,35 @@ class ArgotParserTest {
     })
   }
 
-  @Test
-  def testCodeable(): Unit = {
+  def test(input: String, expected: String, builder: ArgotBuilder): Unit = {
+    assertEquals(fromFile(expected, "utf-8").getLines.mkString, parseTest(fromFile(input, "utf-8").getLines.mkString, builder))
   }
   
-  @Test
-  def testTable(): Unit = {
-    assertEquals(fromFile(table0Expected, "utf-8").getLines.mkString, parseTest(fromFile(table0, "utf-8").getLines.mkString, new DDLBuilder))
-    assertEquals(fromFile(table1Expected, "utf-8").getLines.mkString, parseTest(fromFile(table1, "utf-8").getLines.mkString, new DDLBuilder))
-  }
-
-  @Test
-  def testInsert(): Unit = {
-    assertEquals(fromFile(insert0Expected, "utf-8").getLines.mkString, parseTest(fromFile(insert0, "utf-8").getLines.mkString, new DMLBuilder))
-    assertEquals(fromFile(insert1Expected, "utf-8").getLines.mkString, parseTest(fromFile(insert1, "utf-8").getLines.mkString, new DMLBuilder))
-    
+  def testException(input: String, expected: String, builder: ArgotBuilder): Unit = {
     var exception = false
     try {
-        assertEquals(fromFile(insert2Expected, "utf-8").getLines.mkString, parseTest(fromFile(insert2, "utf-8").getLines.mkString, new DMLBuilder))
+        assertEquals(fromFile(expected, "utf-8").getLines.mkString, parseTest(fromFile(input, "utf-8").getLines.mkString, builder))
     } catch {
       case e: RuntimeException => exception = true 
     }
     assertTrue(exception)
+  }
+  
+  @Test
+  def testCodeable(): Unit = {
+   
+  }
+  
+  @Test
+  def testTable(): Unit = {
+    test(table0, table0Expected, new DDLBuilder)
+    test(table1, table1Expected, new DDLBuilder)
+  }
+  
+  @Test
+  def testInsert(): Unit = {
+    test(insert0, insert0Expected, new DMLBuilder)
+    test(insert1, insert1Expected, new DMLBuilder)
+    testException(insert2, insert2Expected, new DMLBuilder)
   }
 }

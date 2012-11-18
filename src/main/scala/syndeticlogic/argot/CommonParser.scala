@@ -53,11 +53,12 @@ case class MapDef(keyName: String, valueName: String, id: String) extends ArgotS
 case class CodeableRef(typeName: String, id: String, storageStrategy: StorageStrategy, key: Key) extends ArgotSpecialType
 
 abstract class ArgotCompoundType extends ArgotType
-case class Codeable(typeName: String, superType: String, typeList: List[ArgotType]) extends ArgotCompoundType
+case class Codeable(typeName: String, superType: String, typeList: List[ArgotType], equalsMethod: Method, compareMethod: Method) extends ArgotCompoundType
 case class SingletonDef(typeName: String, typeList: List[ArgotType]) extends ArgotCompoundType
 case class TableDef(id: String, typeList: List[ArgotType]) extends ArgotCompoundType
 
 abstract class Method extends ArgotParseTree
+case class MethodUndefined extends Method
 case class EqualsMethod(functionBody: List[Statement]) extends Method
 case class CompareMethod(functionBody: List[Statement]) extends Method
 

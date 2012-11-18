@@ -77,37 +77,6 @@ trait Types extends Commons with SpecialTypes {
   def key: Parser[Key] = PRIMARY ^^ (x => PrimaryKey()) | FOREIGN ^^ (x => ForeignKey()) | INDEX ^^ (x => IndexKey())
 }
 
-
-/* 
- codeable apple extends fruit  {
-   codeable seeds;
-   
-}
-
-codeable fruit {
-  string name,
-  integer shelflife,
-  vector[integer] shelflives,
-  map[key, value] shelflivesToTimeTolive
-  
-  equals(other) {
-    if ( and || !) {
-      if (... and/or ...) {
-      }
-     } else if(...)
- 
-   }
-   
-   compare(other) {
-       if( and || ! ()) ...
-          return -1
-       else if..
-        return 0
-       else..
-        return 1
-   }
-   
-   */
 trait CodeableObject extends Types with Values with SpecialTypes {
   val EXTENDS: Parser[String] = """[eE][xX][tT][eE][nN][dD][sS]""".r
   val AND: Parser[String] = """[aA][nN][dD]""".r
@@ -124,9 +93,18 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   val ELSE: Parser[String] = """[eE][lL][sS][eE]""".r
   
   def codeable: Parser[Codeable] = {
-    CODEABLE~NAME~opt(optionalExtends)~"{"~typeList~opt(equals)~opt(compare)~"}" ^^ {
-      case codeable~name~supertype~"{"~typelist~optequals~optcompare~"}" => Codeable(name, supertype.get, typelist)
+    CODEABLE~NAME~opt(optionalExtends)~"{"~typeList~opt(method)~opt(method)~"}" ^^ {
+      case codeable~name~Some(supertype)~"{"~typelist~Some(optmethod)~Some(optmethod1)~"}" => Codeable(name, supertype, typelist, optmethod, optmethod1)
+      case codeable~name~Some(supertype)~"{"~typelist~Some(optmethod)~None~"}" => Codeable(name, supertype, typelist, optmethod, MethodUndefined())
+      case codeable~name~Some(supertype)~"{"~typelist~None~None~"}" => Codeable(name, supertype, typelist, MethodUndefined(), MethodUndefined())
+      case codeable~name~None~"{"~typelist~Some(optmethod)~Some(optmethod1)~"}" => Codeable(name, "", typelist, optmethod, optmethod1)
+      case codeable~name~None~"{"~typelist~Some(optmethod)~None~"}" => Codeable(name, "", typelist, optmethod, MethodUndefined())
+      case codeable~name~None~"{"~typelist~None~None~"}" => Codeable(name, "", typelist, MethodUndefined(), MethodUndefined())
     }
+  }
+  
+  def method: Parser[Method] = { 
+    equals | compare
   }
   
   def optionalExtends: Parser[String] = EXTENDS~NAME ^^ {case optextends~name => name}

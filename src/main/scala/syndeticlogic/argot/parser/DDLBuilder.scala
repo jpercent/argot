@@ -1,4 +1,4 @@
-package syndeticlogic.argot
+package syndeticlogic.argot.parser
 
 trait SpecialTypesBuilder {
   def vector(v: VectorDef): String = "vector["+v.typeName+"] "+v.id

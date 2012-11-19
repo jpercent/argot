@@ -1,4 +1,4 @@
-package syndeticlogic.argot
+package syndeticlogic.argot.parser
 
 import scala.util.parsing.combinator._
 

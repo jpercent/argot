@@ -1,4 +1,4 @@
-package syndeticlogic.argot
+package syndeticlogic.argot.parser
 
 object ATree {
   abstract class ATree

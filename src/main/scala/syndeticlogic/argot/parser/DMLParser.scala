@@ -1,4 +1,4 @@
-package syndeticlogic.argot
+package syndeticlogic.argot.parser
 
 import scala.util.parsing.combinator._
 import java.io.Reader;
@@ -43,7 +43,7 @@ trait Insert extends JavaTokenParsers with Values with Commons {
   val DELAY: Parser[String] = """[dD][eE][lL][aA][yY]""".r
   val NONE: Parser[String] = """[nN][oO][nN][eE]""".r
   
-  def columns(o: Option[Insert.this.~[Insert.this.~[String,List[syndeticlogic.argot.ColumnName]],String]]): List[ColumnName] = {
+  def columns(o: Option[Insert.this.~[Insert.this.~[String,List[ColumnName]],String]]): List[ColumnName] = {
     o.get._1._2
   }
   

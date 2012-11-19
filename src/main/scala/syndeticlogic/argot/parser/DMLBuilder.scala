@@ -1,4 +1,4 @@
-package syndeticlogic.argot
+package syndeticlogic.argot.parser
 
 class DMLBuilder extends ArgotBuilder with ValueBuilder {
   

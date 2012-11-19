@@ -12,10 +12,12 @@ import java.io.ByteArrayOutputStream
 import scala.io.Source._
 
 class ArgotParserTest {
-  val codeable0 =  "src/test/resources/test-files/codeable0.argot"
+  val codeable0 = "src/test/resources/test-files/codeable0.argot"
   val codeable0Expected =  "src/test/resources/test-files/codeable0Expected.argot"
-  val codeable1 =  "src/test/resources/test-files/codeable0.argot"
-  val codeable1Expected =  "src/test/resources/test-files/codeable0Expected.argot"
+  val codeable1 = "src/test/resources/test-files/codeable1.argot"
+  val codeable1Expected = "src/test/resources/test-files/codeable1Expected.argot"
+  val codeable2 = "src/test/resources/test-files/codeable2.argot"
+  val codeable2Expected = "src/test/resources/test-files/codeable2Expected.argot"
 
   val table0 = "src/test/resources/test-files/table0.argot"
   val table0Expected = "src/test/resources/test-files/table0Expected.argot"
@@ -40,13 +42,13 @@ class ArgotParserTest {
   }
 
   def test(expected: String, input: String, builder: ArgotBuilder): Unit = {
-    assertEquals(fromFile(expected, "utf-8").getLines.mkString, parseTest(fromFile(input, "utf-8").getLines.mkString, builder))
+    assertEquals(fileToString(new File(expected), "utf-8"), parseTest(fromFile(input, "utf-8").getLines.mkString, builder))
   }
   
   def testException(expected: String, input: String, builder: ArgotBuilder): Unit = {
     var exception = false
     try {
-        assertEquals(fromFile(expected, "utf-8").getLines.mkString, parseTest(fromFile(input, "utf-8").getLines.mkString, builder))
+      parseTest(fromFile(input, "utf-8").getLines.mkString, builder)
     } catch {
       case e: RuntimeException => exception = true 
     }
@@ -56,7 +58,8 @@ class ArgotParserTest {
   @Test
   def testCodeable(): Unit = {
     test(codeable0Expected, codeable0, new DDLBuilder)
-    test(codeable1Expected, codeable1, new DDLBuilder)
+    testException(codeable1Expected, codeable1, new DDLBuilder)
+    test(codeable2Expected, codeable2, new DDLBuilder)
   }
   
   @Test
@@ -70,5 +73,24 @@ class ArgotParserTest {
     test(insert0Expected, insert0, new DMLBuilder)
     test(insert1Expected, insert1, new DMLBuilder)
     testException(insert2Expected, insert2, new DMLBuilder)
+  }
+  
+  def fileToString(file: File, encoding: String) = {
+    val inStream = new FileInputStream(file)
+    val outStream = new ByteArrayOutputStream
+    try {
+      var reading = true
+      while (reading) {
+        inStream.read() match {
+          case -1 => reading = false
+          case c => outStream.write(c)
+        }
+      }
+      outStream.flush()
+    }
+    finally {
+      inStream.close()
+    }
+    new String(outStream.toByteArray(), encoding)
   }
 }

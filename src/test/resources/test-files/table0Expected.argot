@@ -1,1 +1,4 @@
-table fact_table { boolean james, type typeValue }
+table fact_table {
+	boolean james,
+	type typeValue
+}

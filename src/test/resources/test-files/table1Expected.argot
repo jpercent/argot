@@ -1,1 +1,6 @@
-table customer { integer id primary, integer customer_address_id foreign, integer spend, codeable order orders decompose }
+table customer {
+	integer id primary,
+	integer customer_address_id foreign,
+	integer spend,
+	codeable order orders decompose
+}

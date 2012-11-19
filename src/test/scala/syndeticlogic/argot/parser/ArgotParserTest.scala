@@ -10,10 +10,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.ByteArrayOutputStream
 import scala.io.Source._
-import syndeticlogic.argot.parser.ArgotBuilder;
-import syndeticlogic.argot.parser.DDLBuilder;
-import syndeticlogic.argot.parser.DMLBuilder;
-import syndeticlogic.argot.parser.ParseArgot;
 
 class ArgotParserTest {
   val codeable0 = "src/test/resources/test-files/codeable0.argot"

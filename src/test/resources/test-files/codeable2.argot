@@ -1,0 +1,10 @@
+codeable fruit {
+  string name,
+  integer shelflife,
+  vector[integer] somevector,
+  map[key, value] somemap
+}
+
+codeable apple extends fruit  {
+   codeable seedType seeds
+}

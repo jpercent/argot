@@ -60,8 +60,8 @@ case class TableDef(id: String, typeList: List[ArgotType]) extends ArgotCompound
 
 abstract class Method extends ArgotParseTree
 case class MethodUndefined extends Method
-case class EqualsMethod(functionBody: List[Statement]) extends Method
-case class CompareMethod(functionBody: List[Statement]) extends Method
+case class EqualsMethod(functionBody: List[Statement], paramName: String) extends Method
+case class CompareMethod(functionBody: List[Statement], paramName: String) extends Method
 
 abstract class Statement extends Method
 case class BooleanReturnStatement(b: Boolean) extends Statement

@@ -98,14 +98,12 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   val EQUALS: Parser[String] = "equals"
   val COMPARE: Parser[String] = "compare"
   val FOREACH: Parser[String] = "foreach"
-    // XXX - this is wrong
-  val OTHER: Parser[String] = "(other)"
+
   val RETURN: Parser[String] = "return"
   val TRUE: Parser[String] = "true"
   val FALSE: Parser[String] = "false"
   val IF: Parser[String] = "if"
-    // XXX - this seems wrong too
-  val ELSEIF: Parser[String] = "elseif"
+  val ELSEIF: Parser[String] = "else if"
   val ELSE: Parser[String] = "else"
   
   def codeable: Parser[Codeable] = {
@@ -126,11 +124,11 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   def optionalExtends: Parser[String] = EXTENDS~NAME ^^ {case optextends~name => name}
   
   def equals: Parser[EqualsMethod] = {
-    EQUALS~OTHER~"{"~>functionStmt<~"}" ^^ (functionstmt => EqualsMethod(functionstmt)) 
+    EQUALS~>"("~NAME~")"~"{"~functionStmt<~"}" ^^ { case op~name~cp~ob~functionstmt => EqualsMethod(functionstmt, name) } 
   }
   
   def compare: Parser[CompareMethod] = {
-    COMPARE~OTHER~"{"~>functionStmt<~"}" ^^ (functionstmt => CompareMethod(functionstmt)) 
+    COMPARE~>"("~NAME~")"~"{"~functionStmt<~"}" ^^ { case op~name~cp~ob~functionstmt => CompareMethod(functionstmt, name) } 
   }
 
   def functionStmt: Parser[List[Statement]] = {

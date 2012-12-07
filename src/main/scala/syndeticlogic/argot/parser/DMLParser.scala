@@ -35,13 +35,13 @@ trait Values extends JavaTokenParsers {
 
 trait Insert extends JavaTokenParsers with Values with Commons {
 
-  val INSERT: Parser[String] = """[iI][nN][sS][eE][rR][tT]""".r
-  val INTO: Parser[String] = """[iI][nN][tT][oO]""".r
-  val VALUES: Parser[String] = """[vV][aA][lL][uU][eE][sS]""".r
-  val HIGH: Parser[String] = """[hH][iI][gG][hH][pP][rR][iI][oO][rR][iI][tT][yY]""".r
-  val LOW: Parser[String] = """[lL][oO][wW][pP][rR][iI][oO][rR][iI][tT][yY]""".r
-  val DELAY: Parser[String] = """[dD][eE][lL][aA][yY]""".r
-  val NONE: Parser[String] = """[nN][oO][nN][eE]""".r
+  val INSERT: Parser[String] = "insert"
+  val INTO: Parser[String] = "into"
+  val VALUES: Parser[String] = "values"
+  val HIGH: Parser[String] = "high priority"
+  val LOW: Parser[String] = "low priority"
+  val DELAY: Parser[String] = "delay"
+  val NONE: Parser[String] = "none"
   
   def columns(o: Option[Insert.this.~[Insert.this.~[String,List[ColumnName]],String]]): List[ColumnName] = {
     o.get._1._2

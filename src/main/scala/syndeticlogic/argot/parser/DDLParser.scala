@@ -122,26 +122,30 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   def method: Parser[Method] = equals | compare
     
   def equals: Parser[EqualsMethod] = {
-    EQUALS~>"("~NAME~")"~"{"~functionStmt<~"}" ^^ { case op~name~cp~ob~functionstmt => EqualsMethod(functionstmt, name) } 
+    EQUALS~>"("~NAME~")"~"{"~functionStmt(BooleanReturnType())<~"}" ^^ { case op~name~cp~ob~functionstmt => EqualsMethod(functionstmt, name) } 
   }
   
   def compare: Parser[CompareMethod] = {
-    COMPARE~>"("~NAME~")"~"{"~functionStmt<~"}" ^^ { case op~name~cp~ob~functionstmt => CompareMethod(functionstmt, name) } 
+    COMPARE~>"("~NAME~")"~"{"~functionStmt(TernaryReturnType())<~"}" ^^ { case op~name~cp~ob~functionstmt => CompareMethod(functionstmt, name) } 
   }
 
-  def functionStmt: Parser[List[Statement]] = {
-    statement~opt(rep(statement)) ^^ {case stmt~optrepmultistmt => 
+  def functionStmt(t: MethodType): Parser[List[Statement]] = {
+    statement(t)~opt(rep(statement(t))) ^^ {case stmt~optrepmultistmt => 
       if(optrepmultistmt.get != NoOption) List(stmt) ++ optrepmultistmt.get 
       else List(stmt)
     }
   }
   
-  def statement: Parser[Statement] = {
-    ifStatement | booleanReturnStatement | ternaryReturnStatement
+  def statement(t: MethodType): Parser[Statement] = t match {
+    case x: BooleanReturnType => ifStatement(t) | foreach(t) | booleanReturnStatement
+    case x: TernaryReturnType => ifStatement(t) | foreach(t) | ternaryReturnStatement
   }
   
-  def ifStatement: Parser[IfThenElseStatement] = 
-    singleIf~opt(elseIfStmts)~opt(elseStmt) ^^ {case ifstmt~elseifstmt~elsestmt => {
+  def foreach(t: MethodType): Parser[Statement] = FOREACH~>block(t) ^^ (stmts => Foreach(Block(stmts)))
+  //def foreach: Parser[] = 
+  
+  def ifStatement(t: MethodType): Parser[IfThenElseStatement] = 
+    singleIf(t)~opt(elseIfStmts(t))~opt(elseStmt(t)) ^^ {case ifstmt~elseifstmt~elsestmt => {
       if(elseifstmt.get != NoOption && elsestmt.get != NoOption) {
         val clauses: List[SubStatement] = ifstmt :: elseifstmt.get ++ (elsestmt.get :: List[SubStatement]())
         IfThenElseStatement(clauses)
@@ -158,16 +162,16 @@ trait CodeableObject extends Types with Values with SpecialTypes {
     }
   }
  
-  def singleIf: Parser[IfStatement] = IF~"("~>condition~")"~"{"~block<~"}" ^^ 
+  def singleIf(t: MethodType): Parser[IfStatement] = IF~"("~>condition~")"~"{"~block(t)<~"}" ^^ 
     {case conditional~")"~"{"~block => IfStatement(conditional, Block(block))}
   
-  def elseIfStmts: Parser[List[ElseIfStatement]] = rep(elseIfStmt) ^^ (List() ++ _) |
-          elseIfStmt ^^ (id => List[ElseIfStatement](id))
+  def elseIfStmts(t: MethodType): Parser[List[ElseIfStatement]] = rep(elseIfStmt(t)) ^^ (List() ++ _) |
+          elseIfStmt(t) ^^ (id => List[ElseIfStatement](id))
   
-  def elseIfStmt: Parser[ElseIfStatement] = ELSEIF~"("~>condition~")"~"{"~block<~"}" ^^ 
+  def elseIfStmt(t: MethodType): Parser[ElseIfStatement] = ELSEIF~"("~>condition~")"~"{"~block(t)<~"}" ^^ 
     {case conditional~")"~"{"~block => ElseIfStatement(conditional, Block(block))}
   
-  def elseStmt: Parser[ElseStatement] = { ELSE~"{"~>block<~"}" ^^ (b => ElseStatement(Block(b)))}
+  def elseStmt(t: MethodType): Parser[ElseStatement] = { ELSE~"{"~>block(t)<~"}" ^^ (b => ElseStatement(Block(b)))}
    
   def booleanReturnStatement: Parser[BooleanReturnStatement] = {
     RETURN~>TRUE ^^ { _ => BooleanReturnStatement(true) } | 
@@ -220,8 +224,7 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   
   def functionReference: Parser[FunctionReference] = {
     EQUALS~"("~>memberReference<~")" ^^ (EqualsReference(_)) |
-    COMPARE~"("~>memberReference<~")" ^^ (CompareReference(_)) |
-    FOREACH~>block ^^ (stmts => Foreach(Block(stmts)))
+    COMPARE~"("~>memberReference<~")" ^^ (CompareReference(_))
   }
   
   def vectorReference: Parser[VectorReference] = {
@@ -232,8 +235,8 @@ trait CodeableObject extends Types with Values with SpecialTypes {
     NAME~"["~reference~"]" ^^ {case id~bracket~ref~bracket1 => MapReference(id, ref)}
   }
   
-  def block: Parser[List[Statement]] = {
-    "{"~>repsep(statement, ",")<~"}" ^^ (List() ++ _)
+  def block(t: MethodType): Parser[List[Statement]] = {
+    "{"~>repsep(statement(t), ",")<~"}" ^^ (List() ++ _)
   }
 }
 

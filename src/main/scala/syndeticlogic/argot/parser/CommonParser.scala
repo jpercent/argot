@@ -58,6 +58,10 @@ case class Codeable(typeName: String, superType: String, typeList: List[ArgotTyp
 case class SingletonDef(typeName: String, typeList: List[ArgotType]) extends ArgotCompoundType
 case class TableDef(id: String, typeList: List[ArgotType]) extends ArgotCompoundType
 
+abstract class MethodType extends ArgotParseTree
+case class BooleanReturnType extends MethodType
+case class TernaryReturnType extends MethodType
+
 abstract class Method extends ArgotParseTree
 case class MethodUndefined extends Method
 case class EqualsMethod(functionBody: List[Statement], paramName: String) extends Method
@@ -67,6 +71,7 @@ abstract class Statement extends Method
 case class BooleanReturnStatement(b: Boolean) extends Statement
 case class TernaryReturnStatement(value: Int) extends Statement
 case class IfThenElseStatement(clauses: List[SubStatement]) extends Statement
+case class Foreach(block: Block) extends Statement
 
 abstract class SubStatement extends Statement
 case class IfStatement(c: Condition, b: Block) extends SubStatement
@@ -99,7 +104,6 @@ case class QualifiedMemberReference(obj: String, member: Reference) extends Refe
 abstract class FunctionReference extends Reference
 case class EqualsReference(param: Reference) extends FunctionReference
 case class CompareReference(param: Reference) extends FunctionReference
-case class Foreach(block: Block) extends FunctionReference
 
 abstract class InsertOption extends ArgotParseTree         
 case class Delayed extends InsertOption

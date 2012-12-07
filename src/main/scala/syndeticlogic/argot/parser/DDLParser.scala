@@ -10,8 +10,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 // vector and map are special because they can be used in declarations of types and as definitions of storage objects.
 trait SpecialTypes extends Commons {
-    val VECTOR: Parser[String] = """[vV][eE][cC][tT][oO][rR]""".r
-    val MAP: Parser[String] = """[mM][aA][pP]""".r
+    val VECTOR: Parser[String] = "vector"
+    val MAP: Parser[String] = "map"
     def vector: Parser[VectorDef] = {
       VECTOR~"["~>NAME~"]"~NAME ^^ {case typeName~rbracket~id => VectorDef(typeName, id, NoKey()) }
     }
@@ -21,22 +21,22 @@ trait SpecialTypes extends Commons {
 }
 
 trait Types extends Commons with SpecialTypes {
-  val TYPE: Parser[String] = """[tT][yY][pP][eE]""".r
-  val BOOLEAN: Parser[String]  = """[bB][oO][oO][lL][eE][aA][nN]""".r
-  val BYTE: Parser[String] = """[bB][yY][tT][eE]""".r
-  val CHAR: Parser[String] = """[cC][hH][aA][rR]""".r
-  val SHORT: Parser[String] = """[sS][hH][oO][rR][tT]""".r
-  val INTEGER: Parser[String] = """[iI][nN][tT][eE][gG][eE][rR]""".r
-  val LONG: Parser[String] = """[lL][oO][nN][gG]""".r 
-  val FLOAT: Parser[String] = """[fF][lL][oO][aA][tT]""".r 
-  val DOUBLE: Parser[String] = """[dD][oO][uU][bB][lL][eE]""".r
-  val STRING: Parser[String] = """[sS][tT][rR][iI][nN][gG]""".r
-  val BINARY: Parser[String] = """[bB][iI][nN][aA][rR][yY]""".r
-  val CODEABLE: Parser[String] = """[cC][oO][dD][eE][aA][bB][lL][eE]""".r
-  val DECOMPOSE: Parser[String] = """[dD][eE][cC][oO][mM][pP][oO][sS][eE]""".r
-  val PRIMARY: Parser[String] = """[pP][rR][iI][mM][aA][rR][yY]""".r
-  val FOREIGN: Parser[String] = """[fF][oO][rR][eE][iI][gG][nN]""".r
-  val INDEX: Parser[String] = """[iI][nN][eE][xX]""".r
+  val TYPE: Parser[String] = "type"
+  val BOOLEAN: Parser[String]  = "boolean"
+  val BYTE: Parser[String] = "byte"
+  val CHAR: Parser[String] = "char"
+  val SHORT: Parser[String] = "short"
+  val INTEGER: Parser[String] = "integer"
+  val LONG: Parser[String] = "long"
+  val FLOAT: Parser[String] = "float"
+  val DOUBLE: Parser[String] = "double"
+  val STRING: Parser[String] = "string"
+  val BINARY: Parser[String] = "binary"
+  val CODEABLE: Parser[String] = "codeable"
+  val DECOMPOSE: Parser[String] = "decompose"
+  val PRIMARY: Parser[String] = "primary"
+  val FOREIGN: Parser[String] = "foreign"
+  val INDEX: Parser[String] = "index"
  
   def tableTypeList: Parser[List[ArgotType]] = repsep(argotTableType, ",") ^^ (List() ++ _) |
       argotTableType ^^ (id => List[ArgotType](id))
@@ -92,19 +92,21 @@ trait Types extends Commons with SpecialTypes {
 
 
 trait CodeableObject extends Types with Values with SpecialTypes {
-  val EXTENDS: Parser[String] = """[eE][xX][tT][eE][nN][dD][sS]""".r
-  val AND: Parser[String] = """[aA][nN][dD]""".r
-  val OR: Parser[String] = """[oO][rR]""".r
-  val EQUALS: Parser[String] = """[eE][qQ][uU][aA][lL][sS]""".r
-  val COMPARE: Parser[String] = """[cC][oO][mM][pP][aA][rR][eE]""".r
-  val FOREACH: Parser[String] = """[fF][oO][rR][eE][aA][cC][hH]""".r
-  val OTHER: Parser[String] = """([oO][tT][hH][eE][rR])""".r
-  val RETURN: Parser[String] = """[rR][eE][tT][uU][rR][nN]""".r
-  val TRUE: Parser[String] = """[tT][rR][uU][eE]""".r
-  val FALSE: Parser[String] = """[fF][aA][lL][sS][eE]""".r
-  val IF: Parser[String] = """[iI][fF]""".r
-  val ELSEIF: Parser[String] = """[eE][lL][sS][eE][iI][fF]""".r
-  val ELSE: Parser[String] = """[eE][lL][sS][eE]""".r
+  val EXTENDS: Parser[String] = "extends"
+  val AND: Parser[String] = "and"
+  val OR: Parser[String] = "or"
+  val EQUALS: Parser[String] = "equals"
+  val COMPARE: Parser[String] = "compare"
+  val FOREACH: Parser[String] = "foreach"
+    // XXX - this is wrong
+  val OTHER: Parser[String] = "(other)"
+  val RETURN: Parser[String] = "return"
+  val TRUE: Parser[String] = "true"
+  val FALSE: Parser[String] = "false"
+  val IF: Parser[String] = "if"
+    // XXX - this seems wrong too
+  val ELSEIF: Parser[String] = "elseif"
+  val ELSE: Parser[String] = "else"
   
   def codeable: Parser[Codeable] = {
     CODEABLE~NAME~opt(optionalExtends)~"{"~typeList~opt(method)~opt(method)~"}" ^^ {
@@ -113,7 +115,7 @@ trait CodeableObject extends Types with Values with SpecialTypes {
       case codeable~name~Some(supertype)~"{"~typelist~None~None~"}" => Codeable(name, supertype, typelist, MethodUndefined(), MethodUndefined())
       case codeable~name~None~"{"~typelist~Some(optmethod)~Some(optmethod1)~"}" => Codeable(name, "", typelist, optmethod, optmethod1)
       case codeable~name~None~"{"~typelist~Some(optmethod)~None~"}" => Codeable(name, "", typelist, optmethod, MethodUndefined())      
-      case codeable~name~None~"{"~typelist~None~None~"}" => { println("HERE "); Codeable(name, "", typelist, MethodUndefined(), MethodUndefined())}
+      case codeable~name~None~"{"~typelist~None~None~"}" => { Codeable(name, "", typelist, MethodUndefined(), MethodUndefined())}
     }
   }
   
@@ -239,7 +241,7 @@ trait CodeableObject extends Types with Values with SpecialTypes {
 }
 
 trait Object extends CodeableObject {
-  val OBJECT: Parser[String] = """[oO][bB][jJ][eE][cC][tT]""".r
+  val OBJECT: Parser[String] = "object"
   def singleton: Parser[SingletonDef] = {
       OBJECT~NAME~"{"~typeList~"}" ^^ {
         case singleton~name~"{"~typelist~"}" => SingletonDef(name, typelist)
@@ -248,7 +250,7 @@ trait Object extends CodeableObject {
 }
 
 trait Table extends Types  {
-  val TABLE: Parser[String] = """[tT][aA][bB][lL][eE]""".r
+  val TABLE: Parser[String] = "table"
   def table: Parser[TableDef] = {
     TABLE~>NAME~"{"~tableTypeList<~"}" ^^ {case id~"{"~typelist => TableDef(id, typelist)}
   }

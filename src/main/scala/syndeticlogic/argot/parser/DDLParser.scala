@@ -117,12 +117,10 @@ trait CodeableObject extends Types with Values with SpecialTypes {
     }
   }
   
-  def method: Parser[Method] = { 
-    equals | compare
-  }
-  
   def optionalExtends: Parser[String] = EXTENDS~NAME ^^ {case optextends~name => name}
-  
+
+  def method: Parser[Method] = equals | compare
+    
   def equals: Parser[EqualsMethod] = {
     EQUALS~>"("~NAME~")"~"{"~functionStmt<~"}" ^^ { case op~name~cp~ob~functionstmt => EqualsMethod(functionstmt, name) } 
   }
@@ -143,12 +141,12 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   }
   
   def ifStatement: Parser[IfThenElseStatement] = 
-    singleIf~opt(elseIfStmt)~opt(elseStmt) ^^ {case ifstmt~elseifstmt~elsestmt => {
+    singleIf~opt(elseIfStmts)~opt(elseStmt) ^^ {case ifstmt~elseifstmt~elsestmt => {
       if(elseifstmt.get != NoOption && elsestmt.get != NoOption) {
-        val clauses = ifstmt :: elseifstmt.get :: elsestmt.get :: List[SubStatement]()
+        val clauses: List[SubStatement] = ifstmt :: elseifstmt.get ++ (elsestmt.get :: List[SubStatement]())
         IfThenElseStatement(clauses)
       } else if(elseifstmt.get != NoOption) {
-        val clauses = ifstmt :: elseifstmt.get :: List[SubStatement]()
+        val clauses = ifstmt :: elseifstmt.get ++ List[SubStatement]()
         IfThenElseStatement(clauses)
       } else if(elsestmt.get != NoOption) {
         val clauses = ifstmt :: elsestmt.get :: List[SubStatement]()
@@ -160,13 +158,14 @@ trait CodeableObject extends Types with Values with SpecialTypes {
     }
   }
  
-  def singleIf: Parser[IfStatement] = { IF~"("~>condition~")"~"{"~block<~"}" ^^ 
+  def singleIf: Parser[IfStatement] = IF~"("~>condition~")"~"{"~block<~"}" ^^ 
     {case conditional~")"~"{"~block => IfStatement(conditional, Block(block))}
-  }
   
-  def elseIfStmt: Parser[ElseIfStatement] = { ELSEIF~"("~>condition~")"~"{"~block<~"}" ^^ 
-    {case conditional~")"~"{"~block => ElseIfStatement(conditional, Block(block))}    
-  }
+  def elseIfStmts: Parser[List[ElseIfStatement]] = rep(elseIfStmt) ^^ (List() ++ _) |
+          elseIfStmt ^^ (id => List[ElseIfStatement](id))
+  
+  def elseIfStmt: Parser[ElseIfStatement] = ELSEIF~"("~>condition~")"~"{"~block<~"}" ^^ 
+    {case conditional~")"~"{"~block => ElseIfStatement(conditional, Block(block))}
   
   def elseStmt: Parser[ElseStatement] = { ELSE~"{"~>block<~"}" ^^ (b => ElseStatement(Block(b)))}
    

@@ -35,6 +35,7 @@ class DMLBuilder extends ArgotBuilder with ValueBuilder {
     case x: TableName => tableName(x)
     case x: ColumnList => columnList(x)
     case x: ValueList => valueList(x)
+    case _ => throw new RuntimeException("match exception")
   }  
 }
 

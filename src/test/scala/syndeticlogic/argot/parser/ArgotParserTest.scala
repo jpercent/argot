@@ -64,7 +64,7 @@ class ArgotParserTest {
     test(codeable0Expected, codeable0, new DDLBuilder)
     testException(codeable1Expected, codeable1, new DDLBuilder)
     test(codeable2Expected, codeable2, new DDLBuilder)
-    //test(codeable3Expected, codeable3, new DDLBuilder)
+    test(codeable3Expected, codeable3, new DDLBuilder)
   }
 
   @Test

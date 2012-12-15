@@ -20,7 +20,7 @@ class DDLBuilder extends ArgotBuilder {
     case x: Decompose => " decompose"
   }
 
-  def matchTypes(t: List[ArgotType]): String = {
+  def foldTypes(t: List[ArgotType]): String = {
     t.foldLeft("")((result, current) => concat(result, current))
   }
 
@@ -52,51 +52,57 @@ class DDLBuilder extends ArgotBuilder {
     case x: QualifiedMemberReference => x.obj+"."+matchReference(x.member)
   } 
   
-  def matchBinary(lhs: Reference, op: String, rhs: Reference): String = matchReference(lhs)+op+matchReference(rhs)
+  def binaryFunction(lhs: Reference, op: String, rhs: Reference): String = matchReference(lhs)+op+matchReference(rhs)
   
-  def matchCondition(bf: BooleanFunction): String = bf match {
-    case x: Negation => "!("+matchCondition(x.f)+")"
-    case x: Less => matchBinary(x.lhs, " < ", x.rhs)
-    case x: LessOrEqual => matchBinary(x.lhs, " < ", x.rhs)
-    case x: EqualEqual => matchBinary(x.lhs, " < ", x.rhs) 
-    case x: NotEqual => matchBinary(x.lhs, " < ", x.rhs)
-    case x: GreaterOrEqual => matchBinary(x.lhs, " < ", x.rhs)
-    case x: Greater => matchBinary(x.lhs, " < ", x.rhs)
+  def matchBooleanFunction(bf: BooleanFunction): String = bf match {
+    case x: Negation => "!("+matchBooleanFunction(x.f)+")"
+    case x: Less => binaryFunction(x.lhs, " < ", x.rhs)
+    case x: LessOrEqual => binaryFunction(x.lhs, " <= ", x.rhs)
+    case x: EqualEqual => binaryFunction(x.lhs, " == ", x.rhs) 
+    case x: NotEqual => binaryFunction(x.lhs, " != ", x.rhs)
+    case x: GreaterOrEqual => binaryFunction(x.lhs, " >= ", x.rhs)
+    case x: Greater => binaryFunction(x.lhs, " > ", x.rhs)
     case x: EqualsObject => ""
-    case x: And => matchCondition(x.lhs)+" && "+matchCondition(x.rhs)
-    case x: Or => matchCondition(x.lhs)+" || "+matchCondition(x.rhs)
-  } 
+    case x: And => matchBooleanFunction(x.lhs)+" && "+matchBooleanFunction(x.rhs)
+    case x: Or => matchBooleanFunction(x.lhs)+" || "+matchBooleanFunction(x.rhs)
+  }
     
-  def condition(c: Condition): String = matchCondition(c.f)
+  def condition(c: Condition): String = matchBooleanFunction(c.f)
   
-  def matchIfClause(r: String, c: SubStatement, depth: Int): String = c match {
-    case x: IfStatement => r + "if ("+condition(x.c)+")"+block(x.b, depth)
-    case x: ElseIfStatement => r + "else if ("+condition(x.c)+")"+block(x.b, depth)
-    case x: ElseStatement => r + "else "+block(x.b, depth)
+  def repeat(s: String, depth: Int): String = depth match { 
+    case 1 => s
+    case _ => s+repeat(s, depth-1)
   }
   
-  def ifstatment(ifs: IfThenElseStatement, depth: Int): String = 
-        ifs.clauses.foldLeft("")((result, current) => matchIfClause(result, current, depth))
+  def matchIfClause(c: SubStatement, depth: Int): String = c match {
+    case x: IfStatement => repeat("\t", depth)+"if ("+condition(x.c)+")"+block(x.b, depth)
+    case x: ElseIfStatement => repeat("\t", depth)+"else if ("+condition(x.c)+")"+block(x.b, depth)
+    case x: ElseStatement => repeat("\t", depth)+"else "+block(x.b, depth)
+  }
+  
+  def ifstatment(ifClauses: List[SubStatement], depth: Int): String = 
+        ifClauses.foldLeft("")((result, current) => matchIfClause(current, depth))
     
-  def block(b: Block, depth: Int): String = "{"+ls+"\t"+statements(b.l, (depth+1))+ls+Seq.fill(depth)("\t")+"}"
+  def block(b: Block, depth: Int): String = "{"+ls+statements(b.l, (depth+1))+repeat("\t", depth)+"}"+ls
   
   def foreach(fe: Foreach, depth: Int): String = block(fe.block, depth)
-  
-  def matchStatement(r: String, s: Statement, depth: Int): String = s match {
-    case x: IfThenElseStatement => r+ifstatment(x, depth)
-    case x: Foreach => r+foreach(x, depth)
-    case x: BooleanReturnStatement => r+x.b.toString()
-    case x: TernaryReturnStatement => r+x.value.toString()
+    
+  def matchStatement(s: Statement, depth: Int): String = s match {
+    case x: IfThenElseStatement => ifstatment(x.clauses, depth)
+    case x: Foreach => foreach(x, depth)
+    case x: BooleanReturnStatement => repeat("\t", depth)+"return "+x.b.toString()+ls
+    case x: TernaryReturnStatement => repeat("\t", depth)+x.value.toString()+ls
   }
     
-  def statements(s: List[Statement], depth: Int): String = s.foldLeft("")((result, current) => matchStatement(result, current, depth))
+  def statements(s: List[Statement], depth: Int): String = 
+    s.foldLeft("")((result,current) => matchStatement(current, depth))
   
-  def equalsMethod(e: EqualsMethod): String =
-    "equals("+e.paramName+") {"+ls+"\t"+statements(e.functionBody, 0)
-       
-  def compareMethod(c: CompareMethod): String = {
-    "compare("+c.paramName+") {"+ls+"\t"//+e.functionBody.foldLeft("")((result, current))
-  }
+  def method(methodName: String, paramName: String, body: List[Statement]): String = 
+    repeat(ls,2)+"\t"+methodName+"("+paramName+") {"+ls+statements(body, 2)+"\t}"
+  
+  def equalsMethod(e: EqualsMethod): String = method("equals", e.paramName, e.functionBody)
+
+  def compareMethod(c: CompareMethod): String = method("compare", c.paramName, c.functionBody)
 
   def matchMethod(t: Method): String = t match {
     case x: EqualsMethod => equalsMethod(x)
@@ -109,12 +115,12 @@ class DDLBuilder extends ArgotBuilder {
     case _ => " extends " + s
   }
 
-  def tableDef(t: TableDef): String = "table " + t.id + " {" + matchTypes(t.typeList) + "\n}"
+  def tableDef(t: TableDef): String = "table " + t.id + " {" + foldTypes(t.typeList) + "\n}"
   
-  def objectDef(t: SingletonDef): String = "object " + t.typeName + " {" + matchTypes(t.typeList) +ls+"}"
+  def objectDef(t: SingletonDef): String = "object " + t.typeName + " {" + foldTypes(t.typeList) +ls+"}"
 
   def codeableDef(t: Codeable): String =
-    "codeable " + t.typeName + matchSuperType(t.superType) + " {" + matchTypes(t.typeList) + matchMethod(t.method) +
+    "codeable " + t.typeName + matchSuperType(t.superType) + " {" + foldTypes(t.typeList) + matchMethod(t.method) +
     matchMethod(t.method1) + ls + "}"
 
   override def build(t: ArgotParseNode): String = t match {

@@ -81,7 +81,7 @@ class DDLBuilder extends ArgotBuilder {
   }
   
   def ifstatment(ifClauses: List[SubStatement], depth: Int): String = 
-        ifClauses.foldLeft("")((result, current) => matchIfClause(current, depth))
+        ifClauses.foldLeft("")((result, current) => result + matchIfClause(current, depth))
     
   def block(b: Block, depth: Int): String = "{"+ls+statements(b.l, (depth+1))+repeat("\t", depth)+"}"+ls
   
@@ -95,7 +95,7 @@ class DDLBuilder extends ArgotBuilder {
   }
     
   def statements(s: List[Statement], depth: Int): String = 
-    s.foldLeft("")((result,current) => matchStatement(current, depth))
+    s.foldLeft("")((result,current) => result + matchStatement(current, depth))
   
   def method(methodName: String, paramName: String, body: List[Statement]): String = 
     repeat(ls,2)+"\t"+methodName+"("+paramName+") {"+ls+statements(body, 2)+"\t}"

@@ -27,7 +27,7 @@ class DMLBuilder extends ArgotBuilder with ValueBuilder {
     case _: NoOption => ""
   }
   
-  override def build(t: ArgotParseTree): String = t match {
+  override def build(t: ArgotParseNode): String = t match {
     case x: InsertStmt => insert(x)
     case x: Value => matchValue(x)
     case x: InsertOption => matchInsertOption(x)

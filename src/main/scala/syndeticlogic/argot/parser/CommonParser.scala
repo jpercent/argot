@@ -9,12 +9,26 @@ import java.lang.RuntimeException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-abstract class ArgotParseTree
-case class ColumnName(s: String) extends ArgotParseTree
-case class TableName(s: String) extends ArgotParseTree
-case class ColumnList(columns: List[ColumnName]) extends ArgotParseTree
-case class ValueList(values: List[Value]) extends ArgotParseTree
+sealed abstract class ArgotParseNode {
+  // XXX - make this a property
+  val debug = false
+  val log = LogFactory.getLog("TransitionTracer")
+  
+  if(debug)
+    trace
+ 
+  def traceCallout = {}   
+  def trace = 
+    log.info(this.toString())
+    traceCallout
+}
 
+case class ColumnName(s: String) extends ArgotParseNode
+case class TableName(s: String) extends ArgotParseNode
+case class ColumnList(columns: List[ColumnName]) extends ArgotParseNode
+case class ValueList(values: List[Value]) extends ArgotParseNode
+
+abstract class Reference extends ArgotParseNode
 case class Value(value: Any) extends Reference
 case class NullValue extends Value(null)
 case class ArgotBooleanValue(b: Boolean) extends Value(b)
@@ -24,17 +38,17 @@ case class StringLiteral(s: String) extends Value(s)
 case class ArgotObjectValue(obj: Map[String, Value]) extends Value(obj)
 case class ArgotArray(array: List[Value]) extends Value(array)
 
-abstract class Key extends ArgotParseTree
+abstract class Key extends ArgotParseNode
 case class PrimaryKey extends Key
 case class ForeignKey extends Key
 case class IndexKey extends Key
 case class NoKey extends Key
 
-abstract class StorageStrategy extends ArgotParseTree
+abstract class StorageStrategy extends ArgotParseNode
 case class Compose extends StorageStrategy
 case class Decompose extends StorageStrategy
 
-abstract class ArgotType extends ArgotParseTree 
+abstract class ArgotType extends ArgotParseNode 
 case class ArgotTypeType(id: String, key: Key) extends ArgotType
 case class ArgotBoolean(id: String, key: Key) extends ArgotType
 case class ArgotByte(id: String, key: Key) extends ArgotType
@@ -47,22 +61,22 @@ case class ArgotDouble(id: String, key: Key) extends ArgotType
 case class ArgotString(id: String, key: Key) extends ArgotType
 case class ArgotBinary(id: String, key: Key) extends ArgotType
 
-abstract class ArgotSpecialType extends ArgotType
+abstract class ArgotCompoundType extends ArgotType
+
+abstract class ArgotSpecialType extends ArgotCompoundType
 case class VectorDef(typeName: String, id: String, key: Key) extends ArgotSpecialType
 case class MapDef(keyName: String, valueName: String, id: String, key: Key) extends ArgotSpecialType
 case class CodeableRef(typeName: String, id: String, storageStrategy: StorageStrategy, key: Key) extends ArgotSpecialType
-
-abstract class ArgotCompoundType extends ArgotType
-case class TypeDefinition(typeName: String, superType: String, typeList: List[ArgotType], method: Method, method1: Method) extends ArgotCompoundType
+//case class TypeDefinition(typeName: String, superType: String, typeList: List[ArgotType], method: Method, method1: Method) extends ArgotCompoundType
 case class Codeable(typeName: String, superType: String, typeList: List[ArgotType], method: Method, method1: Method) extends ArgotCompoundType
 case class SingletonDef(typeName: String, typeList: List[ArgotType]) extends ArgotCompoundType
 case class TableDef(id: String, typeList: List[ArgotType]) extends ArgotCompoundType
 
-abstract class MethodType extends ArgotParseTree
+abstract class MethodType extends ArgotParseNode
 case class BooleanReturnType extends MethodType
 case class TernaryReturnType extends MethodType
 
-abstract class Method extends ArgotParseTree
+abstract class Method extends ArgotParseNode
 case class MethodUndefined extends Method
 case class EqualsMethod(functionBody: List[Statement], paramName: String) extends Method
 case class CompareMethod(functionBody: List[Statement], paramName: String) extends Method
@@ -82,7 +96,7 @@ abstract class SubStatementComponent extends SubStatement
 case class Condition(f: BooleanFunction) extends SubStatementComponent
 case class Block(l: List[Statement]) extends SubStatementComponent
 
-abstract class BooleanFunction
+abstract trait BooleanFunction extends ArgotParseNode
 case class Negation(f: BooleanFunction) extends BooleanFunction
 abstract class Comparator extends BooleanFunction
 case class Less(lhs: Reference, rhs: Reference)  extends Comparator
@@ -91,35 +105,46 @@ case class EqualEqual(lhs: Reference, rhs: Reference) extends Comparator
 case class NotEqual(lhs: Reference, rhs: Reference) extends Comparator
 case class GreaterOrEqual(lhs: Reference, rhs: Reference) extends Comparator
 case class Greater(lhs: Reference, rhs: Reference) extends Comparator
+case class EqualsObject(q: QualifiedMemberReference) extends Comparator
+
 abstract class Connector extends BooleanFunction
 case class And(lhs: BooleanFunction, rhs: BooleanFunction) extends Connector
 case class Or(lhs: BooleanFunction, rhs: BooleanFunction) extends Connector
 
-abstract class Reference
 case class MemberReference(member: String) extends Reference
 case class VectorReference(id: String, index: String) extends Reference
 case class MapReference(id: String, key: Reference) extends Reference
 case class QualifiedMemberReference(obj: String, member: Reference) extends Reference
 
-abstract class FunctionReference extends Reference
+abstract class FunctionReference extends Reference with BooleanFunction
 case class EqualsReference(param: Reference) extends FunctionReference
 case class CompareReference(param: Reference) extends FunctionReference
 
-abstract class InsertOption extends ArgotParseTree         
+abstract class InsertOption extends ArgotParseNode         
 case class Delayed extends InsertOption
 case class LowPriority extends InsertOption
 case class HighPriority extends InsertOption
 case class NoOption extends InsertOption
-case class InsertStmt(tableName: TableName, insertOption: InsertOption, columns: ColumnList, values: ValueList) extends ArgotParseTree 
+case class InsertStmt(tableName: TableName, insertOption: InsertOption, columns: ColumnList, values: ValueList) extends ArgotParseNode 
 
 trait Commons extends JavaTokenParsers {
   val NAME: Parser[String] = ident
   val columnName: Parser[ColumnName] = ident ^^ (id => ColumnName(id))
   val tableName: Parser[TableName] = ident ^^ (id => TableName(id))
+  val log: Log = LogFactory.getLog("ExpansionTracer")
+  // XXX - make this a property
+  val debug = false
+  
+  def traceCallout() = {}
+  
+  def trace(s: String) = {
+    if(debug) log.info(s)
+    traceCallout()
+  }
 }
 
 abstract class ArgotBuilder {
-  def build(t: ArgotParseTree): String;
+  def build(t: ArgotParseNode): String;
 } 
 
 trait ValueBuilder {
@@ -162,6 +187,7 @@ trait ValueBuilder {
     case x: ArgotArray => argotArray(x)
   }
 }
+
 
 
 

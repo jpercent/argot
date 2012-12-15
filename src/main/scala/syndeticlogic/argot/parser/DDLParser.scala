@@ -8,12 +8,14 @@ import java.io.StringReader;
 import java.lang.RuntimeException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 // vector and map are special because they can be used in declarations of types and as definitions of storage objects.
 trait SpecialTypes extends Commons {
     val VECTOR: Parser[String] = "vector"
     val MAP: Parser[String] = "map"
     def vector: Parser[VectorDef] = {
-      VECTOR~"["~>NAME~"]"~NAME ^^ {case typeName~rbracket~id => VectorDef(typeName, id, NoKey()) }
+      VECTOR~"["~>NAME~"]"~NAME ^^ {case typeName~rbracket~id => VectorDef(typeName, id, NoKey()) 
+      }
     }
     def map: Parser[MapDef] = {
       MAP~"["~>NAME~","~NAME~"]"~NAME ^^ {case keyName~comma~valueName~rbracket~id => MapDef(keyName, valueName, id, NoKey())}
@@ -93,8 +95,8 @@ trait Types extends Commons with SpecialTypes {
 
 trait CodeableObject extends Types with Values with SpecialTypes {
   val EXTENDS: Parser[String] = "extends"
-  val AND: Parser[String] = "and"
-  val OR: Parser[String] = "or"
+  val AND: Parser[String] = "&&"
+  val OR: Parser[String] = "||"
   val EQUALS: Parser[String] = "equals"
   val COMPARE: Parser[String] = "compare"
   val FOREACH: Parser[String] = "foreach"
@@ -107,6 +109,7 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   val ELSE: Parser[String] = "else"
   
   def codeable: Parser[Codeable] = {
+    trace("codeable")
     CODEABLE~NAME~opt(optionalExtends)~"{"~typeList~opt(method)~opt(method)~"}" ^^ {
       case codeable~name~Some(supertype)~"{"~typelist~Some(optmethod)~Some(optmethod1)~"}" => Codeable(name, supertype, typelist, optmethod, optmethod1)
       case codeable~name~Some(supertype)~"{"~typelist~Some(optmethod)~None~"}" => Codeable(name, supertype, typelist, optmethod, MethodUndefined())
@@ -122,10 +125,12 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   def method: Parser[Method] = equals | compare
     
   def equals: Parser[EqualsMethod] = {
+    trace("equals")
     EQUALS~>"("~NAME~")"~"{"~functionStmt(BooleanReturnType())<~"}" ^^ { case op~name~cp~ob~functionstmt => EqualsMethod(functionstmt, name) } 
   }
   
   def compare: Parser[CompareMethod] = {
+    trace("compare")
     COMPARE~>"("~NAME~")"~"{"~functionStmt(TernaryReturnType())<~"}" ^^ { case op~name~cp~ob~functionstmt => CompareMethod(functionstmt, name) } 
   }
 
@@ -135,78 +140,105 @@ trait CodeableObject extends Types with Values with SpecialTypes {
       else List(stmt)
     }
   }
-  
-  def statement(t: MethodType): Parser[Statement] = t match {
-    case x: BooleanReturnType => ifStatement(t) | foreach(t) | booleanReturnStatement
-    case x: TernaryReturnType => ifStatement(t) | foreach(t) | ternaryReturnStatement
+
+  def statement(t: MethodType): Parser[Statement] = {
+    trace("statement ")
+    t match {
+      case x: BooleanReturnType => ifStatement(t) | foreach(t) | booleanReturnStatement
+      case x: TernaryReturnType => ifStatement(t) | foreach(t) | ternaryReturnStatement
+    }
   }
   
-  def foreach(t: MethodType): Parser[Statement] = FOREACH~>block(t) ^^ (stmts => Foreach(Block(stmts)))
-  //def foreach: Parser[] = 
+  def foreach(t: MethodType): Parser[Statement] = {
+    trace("foreach")
+    FOREACH~>block(t) ^^ (stmts => Foreach(Block(stmts)))
+  }
   
-  def ifStatement(t: MethodType): Parser[IfThenElseStatement] = 
-    singleIf(t)~opt(elseIfStmts(t))~opt(elseStmt(t)) ^^ {case ifstmt~elseifstmt~elsestmt => {
-      if(elseifstmt.get != NoOption && elsestmt.get != NoOption) {
-        val clauses: List[SubStatement] = ifstmt :: elseifstmt.get ++ (elsestmt.get :: List[SubStatement]())
+  def ifStatement(t: MethodType): Parser[IfThenElseStatement] = {
+    trace("ifStatement")
+    singleIf(t)~opt(elseIfStmts(t))~opt(elseStmt(t)) ^^ {
+      case ifstmt~Some(elseifstmt)~Some(elsestmt) => {
+        val clauses: List[SubStatement] = ifstmt :: elseifstmt ++ (elsestmt :: List[SubStatement]())
         IfThenElseStatement(clauses)
-      } else if(elseifstmt.get != NoOption) {
-        val clauses = ifstmt :: elseifstmt.get ++ List[SubStatement]()
+      }
+      case ifstmt~Some(elseifstmt)~None => {
+        val clauses = ifstmt :: elseifstmt ++ List[SubStatement]()
         IfThenElseStatement(clauses)
-      } else if(elsestmt.get != NoOption) {
-        val clauses = ifstmt :: elsestmt.get :: List[SubStatement]()
+      }
+      case ifstmt~None~Some(elsestmt) => {
+        val clauses = ifstmt :: elsestmt :: List[SubStatement]()
         IfThenElseStatement(clauses)
-      } else {
+      }
+      case ifstmt~None~None => {
         val clauses = ifstmt :: List[SubStatement]()
         IfThenElseStatement(clauses)
       }
     }
   }
  
-  def singleIf(t: MethodType): Parser[IfStatement] = IF~"("~>condition~")"~"{"~block(t)<~"}" ^^ 
+  def singleIf(t: MethodType): Parser[IfStatement] = {
+    trace("singleIf")
+    IF~"("~>condition~")"~"{"~block(t)<~"}" ^^ 
     {case conditional~")"~"{"~block => IfStatement(conditional, Block(block))}
+  }
   
-  def elseIfStmts(t: MethodType): Parser[List[ElseIfStatement]] = rep(elseIfStmt(t)) ^^ (List() ++ _) |
-          elseIfStmt(t) ^^ (id => List[ElseIfStatement](id))
+  def elseIfStmts(t: MethodType): Parser[List[ElseIfStatement]] = {
+    trace("elseIfStmts")
+    rep(elseIfStmt(t)) ^^ (List() ++ _) |
+    elseIfStmt(t) ^^ (id => List[ElseIfStatement](id))
+  }
   
-  def elseIfStmt(t: MethodType): Parser[ElseIfStatement] = ELSEIF~"("~>condition~")"~"{"~block(t)<~"}" ^^ 
+  def elseIfStmt(t: MethodType): Parser[ElseIfStatement] = {
+    trace("elseIfStmt")
+    ELSEIF~"("~>condition~")"~"{"~block(t)<~"}" ^^ 
     {case conditional~")"~"{"~block => ElseIfStatement(conditional, Block(block))}
+  }
   
-  def elseStmt(t: MethodType): Parser[ElseStatement] = { ELSE~"{"~>block(t)<~"}" ^^ (b => ElseStatement(Block(b)))}
+  def elseStmt(t: MethodType): Parser[ElseStatement] = {
+    trace("elseStmt")
+    ELSE~"{"~>block(t)<~"}" ^^ (b => ElseStatement(Block(b)))}
    
   def booleanReturnStatement: Parser[BooleanReturnStatement] = {
+    trace("booleanReturnStatement")
     RETURN~>TRUE ^^ { _ => BooleanReturnStatement(true) } | 
     RETURN~>FALSE ^^ {_ => BooleanReturnStatement(false) }
   }
   
   def ternaryReturnStatement: Parser[TernaryReturnStatement] = {
+    trace("ternaryReturnStatement")
     RETURN~>"-1" ^^ (x => TernaryReturnStatement(-1)) | 
     RETURN~>"0" ^^ (x => TernaryReturnStatement(0)) |
     RETURN~>"1" ^^ (x => TernaryReturnStatement(1))
   }
 
   def condition: Parser[Condition] = {
+    trace("condition")
     booleanFunction ^^ { (x => Condition(x)) }
   }
   
   def booleanFunction: Parser[BooleanFunction] = {
-    "!"~"("~>booleanFunction<~")" ^^ { (x => Negation(x)) } |
-    booleanFunction~AND~booleanFunction ^^ { case lhs~and~rhs => And(lhs, rhs) }
-    booleanFunction~OR~booleanFunction ^^ { case lhs~or~rhs => Or(lhs, rhs) } 
-    "("~>booleanFunction<~")" |
-    reference~"<"~reference ^^ { case lhs~less~rhs => Less(lhs, rhs) }
+   trace("booleanFunction")
+   /* "!"~"("~>booleanFunction<~")" ^^ { (x => Negation(x)) } |
+    booleanFunction~AND~booleanFunction ^^ { case lhs~and~rhs => And(lhs, rhs) } |
+    booleanFunction~OR~booleanFunction ^^ { case lhs~or~rhs => Or(lhs, rhs) } |
+    "("~>booleanFunction<~")" | */ 
+    NAME~"."~functionReference ^^ { case name~dot~functionRef => EqualsObject(QualifiedMemberReference(name, functionRef)) } | 
+    reference~"<"~reference ^^ { case lhs~less~rhs => Less(lhs, rhs) } |
     reference~"<="~reference ^^ { case lhs~lesseq~rhs => LessOrEqual(lhs, rhs) } |
     reference~"=="~reference ^^ { case lhs~eqeq~rhs => EqualEqual(lhs, rhs) } |
     reference~"!="~reference ^^ { case lhs~noteq~rhs => NotEqual(lhs, rhs) } |     
     reference~">="~reference ^^ { case lhs~greq~rhs => Greater(lhs, rhs) } |
-    reference~">"~reference ^^ { case lhs~less~rhs => GreaterOrEqual(lhs, rhs) }
+    reference~">"~reference ^^ { case lhs~less~rhs => GreaterOrEqual(lhs, rhs) } 
   }
   
   def reference: Parser[Reference] = {
+    trace("reference")
     memberReference |
     value
   }
   
   def memberReference: Parser[Reference] = {
+    trace("memberReference")
     objectMemberReference |
     vectorReference |
     mapReference |
@@ -214,6 +246,7 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   }
   
   def objectMemberReference: Parser[QualifiedMemberReference] = {
+    trace("objectMemberReference")
     NAME~"."~functionReference ^^ {
       case obj~dot~member => QualifiedMemberReference(obj, member)
     } |
@@ -223,20 +256,25 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   }
   
   def functionReference: Parser[FunctionReference] = {
+    trace("functionReference")
     EQUALS~"("~>memberReference<~")" ^^ (EqualsReference(_)) |
     COMPARE~"("~>memberReference<~")" ^^ (CompareReference(_))
   }
   
   def vectorReference: Parser[VectorReference] = {
+    trace("vectorReference")
     NAME~"["~wholeNumber~"]" ^^ {case id~bracket~wholenumber~bracket1 => VectorReference(id, wholenumber)}
   }
   
   def mapReference: Parser[MapReference] = {
+    trace("mapReference")
     NAME~"["~reference~"]" ^^ {case id~bracket~ref~bracket1 => MapReference(id, ref)}
   }
   
   def block(t: MethodType): Parser[List[Statement]] = {
-    "{"~>repsep(statement(t), ",")<~"}" ^^ (List() ++ _)
+    trace("block")
+    "{"~>repsep(statement(t), ",")<~"}" ^^ (List() ++ _) |
+      statement(t) ^^ (id => List[Statement](id))
   }
 }
 

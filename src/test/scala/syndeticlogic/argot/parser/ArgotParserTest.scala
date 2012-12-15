@@ -19,6 +19,9 @@ class ArgotParserTest {
   val codeable2 = "src/test/resources/test-files/codeable2.argot"
   val codeable2Expected = "src/test/resources/test-files/codeable2Expected.argot"
 
+  val codeable3 = "src/test/resources/test-files/codeable3.argot"
+  val codeable3Expected = "src/test/resources/test-files/codeable3Expected.argot"
+
   val table0 = "src/test/resources/test-files/table0.argot"
   val table0Expected = "src/test/resources/test-files/table0Expected.argot"
   val table1 = "src/test/resources/test-files/table1.argot"
@@ -42,7 +45,8 @@ class ArgotParserTest {
   }
 
   def test(expected: String, input: String, builder: ArgotBuilder): Unit = {
-    assertEquals(fileToString(new File(expected), "utf-8"), parseTest(fromFile(input, "utf-8").getLines.mkString, builder))
+    assertEquals(fileToString(new File(expected), "utf-8"), 
+        parseTest(fromFile(input, "utf-8").getLines.mkString, builder))
   }
   
   def testException(expected: String, input: String, builder: ArgotBuilder): Unit = {
@@ -60,8 +64,9 @@ class ArgotParserTest {
     test(codeable0Expected, codeable0, new DDLBuilder)
     testException(codeable1Expected, codeable1, new DDLBuilder)
     test(codeable2Expected, codeable2, new DDLBuilder)
+    //test(codeable3Expected, codeable3, new DDLBuilder)
   }
-  
+
   @Test
   def testTable(): Unit = {
     test(table0Expected, table0, new DDLBuilder)

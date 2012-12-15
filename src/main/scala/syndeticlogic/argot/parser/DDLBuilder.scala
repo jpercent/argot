@@ -1,51 +1,21 @@
 package syndeticlogic.argot.parser
 
-trait SpecialTypesBuilder {
-  def vector(v: VectorDef): String = "vector["+v.typeName+"] "+v.id
-  
-  def map(m: MapDef): String = "map["+m.keyName+","+m.valueName+"] "+m.id
-  
+class DDLBuilder extends ArgotBuilder {
+  val ls = System.getProperty("line.separator")
+
   def matchSpecialType(st: ArgotSpecialType): String = st match {
-    case x: VectorDef => vector(x)
-    case x: MapDef => map(x)
+    case x: VectorDef =>  "vector[" + x.typeName + "] " + x.id
+    case x: MapDef => "map[" + x.keyName + "," + x.valueName + "] " + x.id
   }
-}
-
-trait KeyBuilder {
-  def key(key: Key): String = key match {
-      case x: PrimaryKey => " primary"
-      case x: ForeignKey => " foreign"
-      case x: IndexKey => " index"
-      case x: NoKey => ""
+  
+  def matchKey(key: Key): String = key match {
+    case x: PrimaryKey => " primary"
+    case x: ForeignKey =>  " foreign"
+    case x: IndexKey => " index"
+    case x: NoKey => ""
   }
-}
 
-trait TypesBuilder extends KeyBuilder with SpecialTypesBuilder with Types {
-  def typeType(t: ArgotTypeType): String = "type "+t.id+ key(t.key)
-
-  def booleanType(t: ArgotBoolean): String = "boolean "+t.id+key(t.key)
-
-  def byteType(t: ArgotByte): String = "byte "+t.id+key(t.key)
-
-  def charType(t: ArgotChar): String = "char "+t.id+key(t.key)
-
-  def shortType(t: ArgotShort): String = "short " +t.id+key(t.key)
-
-  def integerType(t: ArgotInteger): String = "integer "+t.id+key(t.key)
-
-  def longType(t: ArgotLong): String = "long "+t.id+key(t.key)
-
-  def floatType(t: ArgotFloat): String = "float "+t.id+key(t.key)
-
-  def doubleType(t: ArgotDouble): String = "double "+t.id+key(t.key)
-
-  def stringType(t: ArgotString): String = "string "+t.id+key(t.key)
-
-  def binaryType(t: ArgotBinary): String = "binary "+t.id+key(t.key)
-
-  def codeableRef(t: CodeableRef): String = "codeable "+t.typeName+" "+t.id+ storageStrategy(t.storageStrategy)
-
-  def storageStrategy(s: StorageStrategy): String = s match {
+  def matchStorageStrategy(s: StorageStrategy): String = s match {
     case x: Compose => ""
     case x: Decompose => " decompose"
   }
@@ -55,51 +25,102 @@ trait TypesBuilder extends KeyBuilder with SpecialTypesBuilder with Types {
   }
 
   def concat(r: String, c: ArgotType): String = r match {
-    case "" => System.getProperty("line.separator")+"\t"+matchType(c)
-    case _ => r+","+System.getProperty("line.separator")+"\t"+matchType(c)
+    case "" => ls + "\t" + matchType(c)
+    case _ => r + "," + ls + "\t" + matchType(c)
   }
- 
+
   def matchType(c: ArgotType): String = c match {
-    case x: ArgotTypeType => typeType(x)
-    case x: ArgotBoolean => booleanType(x)
-    case x: ArgotByte => byteType(x)
-    case x: ArgotChar => charType(x)
-    case x: ArgotShort => shortType(x)
-    case x: ArgotInteger => integerType(x)
-    case x: ArgotLong => longType(x)
-    case x: ArgotFloat => floatType(x)
-    case x: ArgotDouble => doubleType(x)
-    case x: ArgotString => stringType(x)
-    case x: ArgotBinary => binaryType(x)
-    case x: CodeableRef => codeableRef(x)
-    case x: ArgotSpecialType => matchSpecialType(x)
+    case t: ArgotTypeType => "type " + t.id + matchKey(t.key)
+    case t: ArgotBoolean => "boolean " + t.id + matchKey(t.key)
+    case t: ArgotByte => "byte " + t.id + matchKey(t.key)
+    case t: ArgotChar => "char " + t.id + matchKey(t.key)
+    case t: ArgotShort => "short " + t.id + matchKey(t.key)
+    case t: ArgotInteger => "integer " + t.id + matchKey(t.key)
+    case t: ArgotLong => "long " + t.id + matchKey(t.key)
+    case t: ArgotFloat => "float " + t.id + matchKey(t.key)
+    case t: ArgotDouble => "double " + t.id + matchKey(t.key)
+    case t: ArgotString => "string " + t.id + matchKey(t.key)
+    case t: ArgotBinary => "binary " + t.id + matchKey(t.key)
+    case t: CodeableRef => "codeable " + t.typeName + " " + t.id + matchStorageStrategy(t.storageStrategy)
+    case t: ArgotSpecialType => matchSpecialType(t)
   }
-}
-
-trait TableBuilder extends TypesBuilder with SpecialTypes {
-  def tableDef(t: TableDef): String = "table "+t.id+" {"+matchTypes(t.typeList)+"\n}"
-}
-
-trait ObjectBuilder extends TypesBuilder with SpecialTypes {
-  def matchMethod(t: Method): String = {""}
   
-  def superType(s: String): String = {
-    if("".equals(s)) ""
-    else " extends "+s
+  def matchReference(r: Reference): String = r match {
+    case x: MemberReference => x.member
+    case x: VectorReference => x.id+"["+x.index+"]"
+    case x: MapReference => x.id +"["+matchReference(x.key)+"]"
+    case x: QualifiedMemberReference => x.obj+"."+matchReference(x.member)
+  } 
+  
+  def matchBinary(lhs: Reference, op: String, rhs: Reference): String = matchReference(lhs)+op+matchReference(rhs)
+  
+  def matchCondition(bf: BooleanFunction): String = bf match {
+    case x: Negation => "!("+matchCondition(x.f)+")"
+    case x: Less => matchBinary(x.lhs, " < ", x.rhs)
+    case x: LessOrEqual => matchBinary(x.lhs, " < ", x.rhs)
+    case x: EqualEqual => matchBinary(x.lhs, " < ", x.rhs) 
+    case x: NotEqual => matchBinary(x.lhs, " < ", x.rhs)
+    case x: GreaterOrEqual => matchBinary(x.lhs, " < ", x.rhs)
+    case x: Greater => matchBinary(x.lhs, " < ", x.rhs)
+    case x: EqualsObject => ""
+    case x: And => matchCondition(x.lhs)+" && "+matchCondition(x.rhs)
+    case x: Or => matchCondition(x.lhs)+" || "+matchCondition(x.rhs)
+  } 
+    
+  def condition(c: Condition): String = matchCondition(c.f)
+  
+  def matchIfClause(r: String, c: SubStatement, depth: Int): String = c match {
+    case x: IfStatement => r + "if ("+condition(x.c)+")"+block(x.b, depth)
+    case x: ElseIfStatement => r + "else if ("+condition(x.c)+")"+block(x.b, depth)
+    case x: ElseStatement => r + "else "+block(x.b, depth)
+  }
+  
+  def ifstatment(ifs: IfThenElseStatement, depth: Int): String = 
+        ifs.clauses.foldLeft("")((result, current) => matchIfClause(result, current, depth))
+    
+  def block(b: Block, depth: Int): String = "{"+ls+"\t"+statements(b.l, (depth+1))+ls+Seq.fill(depth)("\t")+"}"
+  
+  def foreach(fe: Foreach, depth: Int): String = block(fe.block, depth)
+  
+  def matchStatement(r: String, s: Statement, depth: Int): String = s match {
+    case x: IfThenElseStatement => r+ifstatment(x, depth)
+    case x: Foreach => r+foreach(x, depth)
+    case x: BooleanReturnStatement => r+x.b.toString()
+    case x: TernaryReturnStatement => r+x.value.toString()
+  }
+    
+  def statements(s: List[Statement], depth: Int): String = s.foldLeft("")((result, current) => matchStatement(result, current, depth))
+  
+  def equalsMethod(e: EqualsMethod): String =
+    "equals("+e.paramName+") {"+ls+"\t"+statements(e.functionBody, 0)
+       
+  def compareMethod(c: CompareMethod): String = {
+    "compare("+c.paramName+") {"+ls+"\t"//+e.functionBody.foldLeft("")((result, current))
   }
 
-  def objectDef(t: SingletonDef): String = "object "+t.typeName+" {"+matchTypes(t.typeList)+System.getProperty("line.separator")+"}"
+  def matchMethod(t: Method): String = t match {
+    case x: EqualsMethod => equalsMethod(x)
+    case x: CompareMethod => compareMethod(x)
+    case x: MethodUndefined => ""
+  }
+
+  def matchSuperType(s: String): String = s match {
+    case "" => ""
+    case _ => " extends " + s
+  }
+
+  def tableDef(t: TableDef): String = "table " + t.id + " {" + matchTypes(t.typeList) + "\n}"
+  
+  def objectDef(t: SingletonDef): String = "object " + t.typeName + " {" + matchTypes(t.typeList) +ls+"}"
 
   def codeableDef(t: Codeable): String =
-    "codeable "+t.typeName+superType(t.superType)+" {"+matchTypes(t.typeList)+matchMethod(t.method)+matchMethod(t.method1)+System.getProperty("line.separator")+"}"
-}
+    "codeable " + t.typeName + matchSuperType(t.superType) + " {" + matchTypes(t.typeList) + matchMethod(t.method) +
+    matchMethod(t.method1) + ls + "}"
 
-class DDLBuilder extends ArgotBuilder with TypesBuilder with ObjectBuilder with TableBuilder {
-  override def build(t: ArgotParseTree): String = t match {
+  override def build(t: ArgotParseNode): String = t match {
     case x: TableDef => tableDef(x)
     case x: SingletonDef => objectDef(x)
     case x: ArgotSpecialType => matchSpecialType(x)
     case x: Codeable => codeableDef(x)
   }
 }
-

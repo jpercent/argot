@@ -35,7 +35,10 @@ class ArgotParserTest {
   val codeable7Expected = "src/test/resources/test-files/codeable7Expected.argot"    
     
   val codeable8 = "src/test/resources/test-files/codeable8.argot"
-  val codeable8Expected = "src/test/resources/test-files/codeable8Expected.argot"    
+  val codeable8Expected = "src/test/resources/test-files/codeable8Expected.argot"
+    
+  val codeable9 = "src/test/resources/test-files/codeable9.argot"
+  val codeable9Expected = "src/test/resources/test-files/codeable9Expected.argot"        
 
   val table0 = "src/test/resources/test-files/table0.argot"
   val table0Expected = "src/test/resources/test-files/table0Expected.argot"
@@ -85,6 +88,7 @@ class ArgotParserTest {
     test(codeable6Expected, codeable6, new DDLBuilder)    
     test(codeable7Expected, codeable7, new DDLBuilder)
     test(codeable8Expected, codeable8, new DDLBuilder)
+    test(codeable9Expected, codeable9, new DDLBuilder)    
     // foreach
     // and or, !, ()
     // vector, map, 

@@ -31,7 +31,7 @@ class ArgotParserDebugHelper {
   
   @Test
   def show(): Unit = {
-    show(argotParser.codeable8, new DDLBuilder)
+    show(argotParser.codeable9, new DDLBuilder)
 //    showException(argotParser.insert2, new DMLBuilder)
   }
 }

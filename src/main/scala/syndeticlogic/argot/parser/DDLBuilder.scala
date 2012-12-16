@@ -73,6 +73,7 @@ class DDLBuilder extends ArgotBuilder {
     case x: EqualsObject => matchReference(x.q)
     case x: And => matchBooleanFunction(x.lhs)+" and "+matchBooleanFunction(x.rhs)
     case x: Or => matchBooleanFunction(x.lhs)+" or "+matchBooleanFunction(x.rhs)
+    case x: ParenCombinator => "("+matchBooleanFunction(x.b)+")"
   }
     
   def condition(c: Condition): String = matchBooleanFunction(c.f)

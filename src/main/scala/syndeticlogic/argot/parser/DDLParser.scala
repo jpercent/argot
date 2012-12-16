@@ -216,10 +216,10 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   }
   
   def booleanFunctionCombinator: Parser[BooleanFunction] = {
-    "("~>booleanFunction<~")" |
-    "!"~"("~>booleanFunction<~")" ^^ { (x => Negation(x)) } |
-    booleanFunction~AND~booleanFunction ^^ { case lhs~and~rhs => And(lhs, rhs) } |
-    booleanFunction~OR~booleanFunction ^^ { case lhs~or~rhs => Or(lhs, rhs) } |
+    "("~>booleanFunctionCombinator<~")" ^^ (x => ParenCombinator(x)) |
+    "!"~"("~>booleanFunctionCombinator<~")" ^^ { (x => Negation(x)) } |
+    booleanFunction~AND~booleanFunctionCombinator ^^ { case lhs~and~rhs => And(lhs, rhs) } |
+    booleanFunction~OR~booleanFunctionCombinator ^^ { case lhs~or~rhs => Or(lhs, rhs) } |
     booleanFunction
   }
   

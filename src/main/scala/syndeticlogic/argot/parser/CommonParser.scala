@@ -110,6 +110,7 @@ case class EqualsObject(q: QualifiedMemberReference) extends Comparator
 abstract class Connector extends BooleanFunction
 case class And(lhs: BooleanFunction, rhs: BooleanFunction) extends Connector
 case class Or(lhs: BooleanFunction, rhs: BooleanFunction) extends Connector
+case class ParenCombinator(b: BooleanFunction) extends Connector
 
 case class MemberReference(member: String) extends Reference
 case class VectorReference(id: String, index: String) extends Reference

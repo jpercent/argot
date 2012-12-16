@@ -50,6 +50,8 @@ class DDLBuilder extends ArgotBuilder {
     case x: VectorReference => x.id+"["+x.index+"]"
     case x: MapReference => x.id +"["+matchReference(x.key)+"]"
     case x: QualifiedMemberReference => x.obj+"."+matchReference(x.member)
+    case x: EqualsReference => "equals("+matchReference(x.param)+")"
+    case x: CompareReference => "compare("+matchReference(x.param)+")"
   } 
   
   def binaryFunction(lhs: Reference, op: String, rhs: Reference): String = matchReference(lhs)+op+matchReference(rhs)
@@ -62,7 +64,7 @@ class DDLBuilder extends ArgotBuilder {
     case x: NotEqual => binaryFunction(x.lhs, " != ", x.rhs)
     case x: GreaterOrEqual => binaryFunction(x.lhs, " >= ", x.rhs)
     case x: Greater => binaryFunction(x.lhs, " > ", x.rhs)
-    case x: EqualsObject => ""
+    case x: EqualsObject => matchReference(x.q)
     case x: And => matchBooleanFunction(x.lhs)+" && "+matchBooleanFunction(x.rhs)
     case x: Or => matchBooleanFunction(x.lhs)+" || "+matchBooleanFunction(x.rhs)
   }

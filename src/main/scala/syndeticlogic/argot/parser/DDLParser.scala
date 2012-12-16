@@ -92,7 +92,6 @@ trait Types extends Commons with SpecialTypes {
   def key: Parser[Key] = PRIMARY ^^ (x => PrimaryKey()) | FOREIGN ^^ (x => ForeignKey()) | INDEX ^^ (x => IndexKey())
 }
 
-
 trait CodeableObject extends Types with Values with SpecialTypes {
   val EXTENDS: Parser[String] = "extends"
   val AND: Parser[String] = "&&"
@@ -257,8 +256,8 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   
   def functionReference: Parser[FunctionReference] = {
     trace("functionReference")
-    EQUALS~"("~>memberReference<~")" ^^ (EqualsReference(_)) |
-    COMPARE~"("~>memberReference<~")" ^^ (CompareReference(_))
+    EQUALS~"("~>reference<~")" ^^ (EqualsReference(_)) |
+    COMPARE~"("~>reference<~")" ^^ (CompareReference(_))
   }
   
   def vectorReference: Parser[VectorReference] = {

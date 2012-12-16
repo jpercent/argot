@@ -71,8 +71,8 @@ class DDLBuilder extends ArgotBuilder {
     case x: GreaterOrEqual => binaryFunction(x.lhs, " >= ", x.rhs)
     case x: Greater => binaryFunction(x.lhs, " > ", x.rhs)
     case x: EqualsObject => matchReference(x.q)
-    case x: And => matchBooleanFunction(x.lhs)+" && "+matchBooleanFunction(x.rhs)
-    case x: Or => matchBooleanFunction(x.lhs)+" || "+matchBooleanFunction(x.rhs)
+    case x: And => matchBooleanFunction(x.lhs)+" and "+matchBooleanFunction(x.rhs)
+    case x: Or => matchBooleanFunction(x.lhs)+" or "+matchBooleanFunction(x.rhs)
   }
     
   def condition(c: Condition): String = matchBooleanFunction(c.f)

@@ -217,17 +217,17 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   
   def booleanFunction: Parser[BooleanFunction] = {
    trace("booleanFunction")
-   /* "!"~"("~>booleanFunction<~")" ^^ { (x => Negation(x)) } |
-    booleanFunction~AND~booleanFunction ^^ { case lhs~and~rhs => And(lhs, rhs) } |
-    booleanFunction~OR~booleanFunction ^^ { case lhs~or~rhs => Or(lhs, rhs) } |
-    "("~>booleanFunction<~")" | */ 
+   "!"~"("~>booleanFunction<~")" ^^ { (x => Negation(x)) } |
+   "("~>booleanFunction<~")" |  
     NAME~"."~functionReference ^^ { case name~dot~functionRef => EqualsObject(QualifiedMemberReference(name, functionRef)) } | 
     reference~"<"~reference ^^ { case lhs~less~rhs => Less(lhs, rhs) } |
     reference~"<="~reference ^^ { case lhs~lesseq~rhs => LessOrEqual(lhs, rhs) } |
     reference~"=="~reference ^^ { case lhs~eqeq~rhs => EqualEqual(lhs, rhs) } |
     reference~"!="~reference ^^ { case lhs~noteq~rhs => NotEqual(lhs, rhs) } |     
     reference~">="~reference ^^ { case lhs~greq~rhs => Greater(lhs, rhs) } |
-    reference~">"~reference ^^ { case lhs~less~rhs => GreaterOrEqual(lhs, rhs) } 
+    reference~">"~reference ^^ { case lhs~less~rhs => GreaterOrEqual(lhs, rhs) } |
+    booleanFunction~AND~booleanFunction ^^ { case lhs~and~rhs => And(lhs, rhs) } |
+    booleanFunction~OR~booleanFunction ^^ { case lhs~or~rhs => Or(lhs, rhs) }
   }
   
   def reference: Parser[Reference] = {

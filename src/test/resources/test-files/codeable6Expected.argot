@@ -1,0 +1,31 @@
+codeable fruit {
+	string name,
+	integer shelflife,
+	vector[integer] somevector,
+	map[key,value] somemap
+
+	equals(other) {
+		if (other.name == name){
+			if (name.equals(other.name)){
+				return true
+			}
+			else if (name.equals(other.name)){
+				if (selflife == other.selflife){
+					return true
+				}
+				else if (name == other.name){
+					return false
+				}
+			}
+			else if (name == other.name){
+				return true
+			}
+			else {
+				return false
+			}
+		}
+	}
+}
+codeable apple extends fruit {
+	codeable seedType seeds
+}

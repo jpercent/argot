@@ -24,6 +24,12 @@ class ArgotParserTest {
     
   val codeable4 = "src/test/resources/test-files/codeable4.argot"
   val codeable4Expected = "src/test/resources/test-files/codeable4Expected.argot"
+    
+  val codeable5 = "src/test/resources/test-files/codeable5.argot"
+  val codeable5Expected = "src/test/resources/test-files/codeable5Expected.argot"
+    
+  val codeable6 = "src/test/resources/test-files/codeable6.argot"
+  val codeable6Expected = "src/test/resources/test-files/codeable6Expected.argot"
 
   val table0 = "src/test/resources/test-files/table0.argot"
   val table0Expected = "src/test/resources/test-files/table0Expected.argot"
@@ -69,6 +75,8 @@ class ArgotParserTest {
     test(codeable2Expected, codeable2, new DDLBuilder)
     test(codeable3Expected, codeable3, new DDLBuilder)
     test(codeable4Expected, codeable4, new DDLBuilder)
+    test(codeable5Expected, codeable5, new DDLBuilder)
+    test(codeable6Expected, codeable6, new DDLBuilder)    
   }
 
   @Test

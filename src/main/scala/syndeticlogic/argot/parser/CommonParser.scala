@@ -83,7 +83,7 @@ case class CompareMethod(functionBody: List[Statement], paramName: String) exten
 
 abstract class Statement extends Method
 case class BooleanReturnStatement(b: Boolean) extends Statement
-case class TernaryReturnStatement(value: Int) extends Statement
+case class TernaryReturnStatement(value: CompareValue) extends Statement
 case class IfThenElseStatement(clauses: List[SubStatement]) extends Statement
 case class Foreach(block: Block) extends Statement
 
@@ -119,6 +119,11 @@ case class QualifiedMemberReference(obj: String, member: Reference) extends Refe
 abstract class FunctionReference extends Reference with BooleanFunction
 case class EqualsReference(param: Reference) extends FunctionReference
 case class CompareReference(param: Reference) extends FunctionReference
+
+case class CompareValue extends Reference
+case class LessValue extends CompareValue
+case class EqualValue extends CompareValue
+case class GreaterValue extends CompareValue 
 
 abstract class InsertOption extends ArgotParseNode         
 case class Delayed extends InsertOption

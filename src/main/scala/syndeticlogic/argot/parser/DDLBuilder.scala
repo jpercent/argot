@@ -45,6 +45,12 @@ class DDLBuilder extends ArgotBuilder {
     case t: ArgotSpecialType => matchSpecialType(t)
   }
   
+  def matchCompareValue(c: CompareValue): String = c match {
+    case x: LessValue => "LESS"
+    case x: EqualValue => "EQUAL"
+    case x: GreaterValue => "GREATER"
+  }
+  
   def matchReference(r: Reference): String = r match {
     case x: MemberReference => x.member
     case x: VectorReference => x.id+"["+x.index+"]"
@@ -93,7 +99,7 @@ class DDLBuilder extends ArgotBuilder {
     case x: IfThenElseStatement => ifstatment(x.clauses, depth)
     case x: Foreach => foreach(x, depth)
     case x: BooleanReturnStatement => repeat("\t", depth)+"return "+x.b.toString()+ls
-    case x: TernaryReturnStatement => repeat("\t", depth)+x.value.toString()+ls
+    case x: TernaryReturnStatement => repeat("\t", depth)+matchCompareValue(x.value)+ls
   }
     
   def statements(s: List[Statement], depth: Int): String = 

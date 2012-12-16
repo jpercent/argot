@@ -205,9 +205,9 @@ trait CodeableObject extends Types with Values with SpecialTypes {
   
   def ternaryReturnStatement: Parser[TernaryReturnStatement] = {
     trace("ternaryReturnStatement")
-    RETURN~>"-1" ^^ (x => TernaryReturnStatement(-1)) | 
-    RETURN~>"0" ^^ (x => TernaryReturnStatement(0)) |
-    RETURN~>"1" ^^ (x => TernaryReturnStatement(1))
+    RETURN~>"LESS" ^^ (x => TernaryReturnStatement(LessValue())) | 
+    RETURN~>"EQUAL" ^^ (x => TernaryReturnStatement(EqualValue())) |
+    RETURN~>"GREATER" ^^ (x => TernaryReturnStatement(GreaterValue()))
   }
 
   def condition: Parser[Condition] = {

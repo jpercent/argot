@@ -14,11 +14,11 @@
 	</properties>
 
 	<dependencies>
-		<!-- dependency>
+		<dependency>
 			<groupId>org.scalatest</groupId>
-			<artifactId>scalatest_2.9.0</artifactId>
+			<artifactId>scalatest_2.10.0</artifactId>
 			<version>1.8</version>
-		</dependency-->
+		</dependency>
 
 		<dependency>
 			<groupId>org.scala-lang</groupId>

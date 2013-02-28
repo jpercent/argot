@@ -29,7 +29,7 @@ case class ColumnList(columns: List[ColumnName]) extends ArgotParseNode
 case class ValueList(values: List[Value]) extends ArgotParseNode
 
 abstract class Reference extends ArgotParseNode
-case class Value(value: Any) extends Reference
+abstract class Value(value: Any) extends Reference
 case class NullValue extends Value(null)
 case class ArgotBooleanValue(b: Boolean) extends Value(b)
 case class IntegralNumber(i: Long) extends Value(i)
@@ -121,7 +121,7 @@ abstract class FunctionReference extends Reference with BooleanFunction
 case class EqualsReference(param: Reference) extends FunctionReference
 case class CompareReference(param: Reference) extends FunctionReference
 
-case class CompareValue extends Reference
+abstract class CompareValue extends Reference
 case class LessValue extends CompareValue
 case class EqualValue extends CompareValue
 case class GreaterValue extends CompareValue 
@@ -170,7 +170,7 @@ trait ValueBuilder {
   def realNumber(r: RealNumber): String = r.d.toString()
   def stringLiteral(s: StringLiteral): String = s.s
   
-  def argotObject(ao: ArgotObjectValue): String = "{"+members(ao.obj.elements, ao.obj.size, 0)+"}"
+  def argotObject(ao: ArgotObjectValue): String = "{"+members(ao.obj.iterator, ao.obj.size, 0)+"}"
   def members(objiter: Iterator[(String, Value)], size: Int, i: Int): String = {
     val entry = objiter.next()
     if(i == size-1) entry._1 +":"+matchValue(entry._2) +","
